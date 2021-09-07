@@ -1,0 +1,62 @@
+name: test-governance
+
+env:
+  ARM_CLIENT_ID: ${{ secrets.AZURE_S_Contoso_POLICY_SP_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_S_Contoso_POLICY_SP_CLIENT_SECRET }}
+  ARM_ENVIRONMENT: "public"
+  ARM_PARTNER_ID: ${{ secrets.AZURE_CUA_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_S_Contoso_CAS_SP_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_S_Contoso_CAS_SP_TENANT_ID }}
+  AZURE_E_POLICY_SP_CREDS: ${{ secrets.AZURE_S_Contoso_POLICY_SP }}
+  TF_VAR_policy_scope: Contoso_Sandbox
+  TF_VAR_set_audit_or_disabled: Disabled
+  TF_VAR_pip_exclude_rg_list: '[
+    "S-TX-RG-CLR",
+    "S-VA-RG-CLR",
+    "S-TX-RG-ROC",
+    "S-VA-RG-ROC",
+    "PACKER-win2019STIG",
+    "PACKER-win2019.base",
+    "PACKER-zimperium",
+    "PACKER-printerlogic",
+    "PACKER-ubuntu1804-base",
+    "PACKER-hyperv-win2019",
+    "Contoso_TESTING"
+  ]'
+
+on:
+  pull_request:
+    branches: [ notrightnow ]
+    paths:
+    - '.github/workflows/test-governance.yml'
+    - 'governance/**'
+    - '!README.md'
+    - '!LICENSE'
+    - '!.github/ISSUE_TEMPLATE/**'
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2.3.4
+
+    - name: Terraform Governance
+      shell: pwsh
+      run: |
+        cd governance
+        terraform init -input=false -backend-config="${{ github.workspace }}/.tfbackend/${{ github.workflow }}"
+        #terraform destroy -auto-approve -var-file="governance.tfvars"
+        terraform plan -input=false -var-file="governance.tfvars" -out=tfplan
+        terraform apply -auto-approve tfplan
+
+    - name: Connect to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ env.AZURE_E_POLICY_SP_CREDS }}
+        environment: 'AzureCloud'
+
+    - name: Initiate Policy Scan
+      shell: pwsh
+      run: |
+        az policy state trigger-scan --no-wait

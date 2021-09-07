@@ -1,0 +1,54 @@
+name: test-monitoring
+
+env:
+  ARM_CLIENT_ID: ${{ secrets.AZURE_T_Contoso_POLICY_SP_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_T_Contoso_POLICY_SP_CLIENT_SECRET }}
+  ARM_ENVIRONMENT: "public"
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_T_Contoso_CORE_SP_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_T_Contoso_CORE_SP_TENANT_ID }}
+  AZURE_E_CORE_SP_CREDS: ${{ secrets.AZURE_T_Contoso_CORE_SP }}
+  AZURE_E_POLICY_SP_CREDS: ${{ secrets.AZURE_T_Contoso_POLICY_SP }}
+  TF_VAR_location: westus2
+  TF_VAR_log_analytics_name: svaContosocdecore
+  TF_VAR_log_analytics_rg_name: S-VA-Contoso-COR-CDE
+  TF_VAR_policy_identity_role: Contributor
+  TF_VAR_policy_scope: Contoso_Sandbox
+  TF_VAR_storage_account_name: svaContosocdecoremon
+  TF_VAR_storage_account_rg_name: S-VA-Contoso-COR-CDE
+  TF_VAR_subscription_id: ${{ secrets.AZURE_T_Contoso_CORE_SP_SUBSCRIPTION_ID }}
+
+on:
+  pull_request:
+    branches: [ notrightnow ]
+    paths:
+    - '.github/workflows/test-monitoring.yml'
+    - 'monitoring/**'
+    - '!README.md'
+    - '!LICENSE'
+    - '!.github/ISSUE_TEMPLATE/**'
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2.3.4
+
+    - name: Terraform Monitoring
+      run: |
+        cd monitoring
+        terraform init -input=false -backend-config=${{ github.workspace }}/.tfbackend/${{ github.workflow }}
+        #terraform destroy -auto-approve -var-file="monitoring.tfvars"
+        terraform plan -input=false -var-file="monitoring.tfvars"
+        terraform apply -auto-approve -var-file="monitoring.tfvars"
+
+    - name: Connect to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ env.AZURE_E_CORE_SP_CREDS }}
+        environment: 'AzureCloud'
+
+    - name: Initiate Scan
+      shell: pwsh
+      run: |
+        az policy state trigger-scan --no-wait

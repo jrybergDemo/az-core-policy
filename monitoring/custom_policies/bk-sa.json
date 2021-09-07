@@ -1,0 +1,126 @@
+{
+  "if": {
+    "field": "type",
+    "equals": "Microsoft.RecoveryServices/vaults"
+  },
+  "then": {
+    "effect": "deployIfNotExists",
+    "details": {
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "roleDefinitionIds": [
+        "/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c"
+      ],
+      "existenceCondition": {
+        "allOf": [
+          {
+            "count": {
+              "field": "Microsoft.Insights/diagnosticSettings/logs[*]",
+              "where": {
+                "allOf": [
+                  {
+                    "field": "Microsoft.Insights/diagnosticSettings/logs[*].Category",
+                    "in": [
+                      "CoreAzureBackup",
+                      "AddonAzureBackupJobs",
+                      "AddonAzureBackupAlerts",
+                      "AddonAzureBackupPolicy",
+                      "AddonAzureBackupStorage",
+                      "AddonAzureBackupProtectedInstance"
+                    ]
+                  },
+                  {
+                    "field": "Microsoft.Insights/diagnosticSettings/logs[*].Enabled",
+                    "equals": "True"
+                  }
+                ]
+              }
+            },
+            "Equals": 6
+          },
+          {
+            "field": "Microsoft.Insights/diagnosticSettings/storageAccountId",
+            "matchInsensitively": "[parameters('storageAccount')]"
+          }
+        ]
+      },
+      "deployment": {
+        "properties": {
+          "mode": "incremental",
+          "template": {
+            "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+            "contentVersion": "1.0.0.0",
+            "parameters": {
+              "diagnosticsSettingName": {
+                "type": "String"
+              },
+              "resourceName": {
+                "type": "String"
+              },
+              "storageAccount": {
+                "type": "String"
+              },
+              "location": {
+                "type": "String"
+              }
+            },
+            "variables": {},
+            "resources": [
+              {
+                "type": "Microsoft.RecoveryServices/vaults/providers/diagnosticSettings",
+                "apiVersion": "2017-05-01-preview",
+                "name": "[concat(parameters('resourceName'), '/', 'Microsoft.Insights/', parameters('diagnosticsSettingName'))]",
+                "location": "[parameters('location')]",
+                "dependsOn": [],
+                "properties": {
+                  "storageAccountId": "[parameters('storageAccount')]",
+                  "metrics": [],
+                  "logs": [
+                    {
+                      "category": "CoreAzureBackup",
+                      "enabled": true
+                    },
+                    {
+                      "category": "AddonAzureBackupJobs",
+                      "enabled": true
+                    },
+                    {
+                      "category": "AddonAzureBackupAlerts",
+                      "enabled": true
+                    },
+                    {
+                      "category": "AddonAzureBackupPolicy",
+                      "enabled": true
+                    },
+                    {
+                      "category": "AddonAzureBackupStorage",
+                      "enabled": true
+                    },
+                    {
+                      "category": "AddonAzureBackupProtectedInstance",
+                      "enabled": true
+                    }
+                  ]
+                }
+              }
+            ],
+            "outputs": {}
+          },
+          "parameters": {
+            "diagnosticsSettingName": {
+              "value": "[parameters('diagnosticsSettingName')]"
+            },
+            "storageAccount": {
+              "value": "[parameters('storageAccount')]"
+            },
+            "location": {
+              "value": "[field('location')]"
+            },
+            "resourceName": {
+              "value": "[field('name')]"
+            }
+          }
+        }
+      }
+    }
+  }
+}

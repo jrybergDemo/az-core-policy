@@ -1,0 +1,128 @@
+name: dev-monitoring
+
+env:
+  ARM_CLIENT_ID: ${{ secrets.AZURE_D_Contoso_POLICY_SP_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_D_Contoso_POLICY_SP_CLIENT_SECRET }}
+  ARM_ENVIRONMENT: "public"
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_D_Contoso_CAS_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_Contoso_TENANT_ID }}
+  AZURE_E_CAS_SP_CREDS: ${{ secrets.AZURE_D_Contoso_CAS_SP }}
+  AZURE_E_POLICY_SP_CREDS: ${{ secrets.AZURE_D_Contoso_POLICY_SP }}
+  TF_VAR_location: westus2
+  TF_VAR_log_analytics_name: dvaContosocdecore
+  TF_VAR_log_analytics_rg_name: D-VA-Contoso-COR-CDE
+  TF_VAR_policy_identity_role: Contributor
+  TF_VAR_policy_scope: Contoso_Development
+  TF_VAR_storage_account_name: dvaContosocdecoremon
+  TF_VAR_storage_account_rg_name: D-VA-Contoso-COR-CDE
+  TF_VAR_subscription_id: ${{ secrets.AZURE_D_Contoso_CAS_SUBSCRIPTION_ID }}
+
+on:
+  pull_request:
+    branches: [ notrightnow ]
+    paths:
+    - '.github/workflows/dev-monitoring.yml'
+    - 'monitoring/**'
+    - '!README.md'
+    - '!LICENSE'
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2.3.4
+
+    - name: Terraform Monitoring
+      run: |
+        cd monitoring
+        terraform init -input=false -backend-config=${{ github.workspace }}/.tfbackend/${{ github.workflow }}
+        #terraform destroy -auto-approve -var-file="monitoring.tfvars"
+        terraform plan -input=false -var-file="monitoring.tfvars"
+        terraform apply -auto-approve -var-file="monitoring.tfvars"
+
+    - name: Connect to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ env.AZURE_E_CAS_SP_CREDS }}
+        environment: 'AzureCloud'
+
+    - name: Initiate Scan
+      shell: pwsh
+      run: |
+        az policy state trigger-scan
+
+  policytesting:
+    needs: [terraform]
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2.3.4
+
+    - name: Connect to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ env.AZURE_E_POLICY_SP_CREDS }}
+        environment: 'AzureCloud'
+        enable-AzPSSession: true
+
+    - name: Start Tests
+      continue-on-error: false
+      shell: pwsh
+      run: |
+        #az policy state trigger-scan
+        $null = Install-Module -Name Az -Scope CurrentUser -Force
+        Import-Module Pester, Az.Resources, Az.Monitor, Az.PolicyInsights
+
+        cd monitoring/tests/terraform
+        terraform init -input=false -backend-config="${{ github.workspace }}/.tfbackend/${{ github.workflow }}-tests"
+        terraform plan -input=false -out=tfplan
+        terraform apply -auto-approve tfplan
+        $tfOutputs = terraform output -json | ConvertFrom-Json -AsHashtable
+        $tfOutputs
+
+        ## Re-enable diagnostic setting incase remediation did not completed in time
+        $ResourceGroup = Get-AzResourceGroup -Name "Contoso_TESTING"
+        $nonCompliantPolicies = Get-AzPolicyState -ResourceGroupName $ResourceGroup.ResourceGroupName | Where-Object { $_.ComplianceState -eq "NonCompliant" -and $_.PolicyDefinitionAction -eq "deployIfNotExists" }
+        foreach ($policy in $nonCompliantPolicies)
+        {
+          $remediationName = "testrem." + $policy.PolicyDefinitionName
+          Start-AzPolicyRemediation -Scope $ResourceGroup.ResourceId -Name $remediationName -PolicyAssignmentId $policy.PolicyAssignmentId -PolicyDefinitionReferenceId $policy.PolicyDefinitionReferenceId -ErrorAction SilentlyContinue
+        }
+
+        Start-Sleep -s 300
+
+        $resourceIdList = @()
+        $tfOutputs.Keys.ForEach({ $resourceIdList += @{ ResourceId = $tfOutputs.$_.value } })
+        $resourceIdList
+
+        $paramData = @{ ResourceIdList = $resourceIdList }
+        $container = New-PesterContainer -Path "${{ GITHUB.WORKSPACE }}\monitoring" -Data $paramData
+        Invoke-Pester -Container $container -Output Detailed
+
+    - name: Cleanup Tests
+      continue-on-error: false
+      shell: pwsh
+      run: |
+        $null = Install-Module -Name Az -Scope CurrentUser -Force
+        Import-Module Pester, Az.Resources, Az.Monitor, Az.PolicyInsights
+
+        cd monitoring/tests/terraform
+        terraform init -input=false -backend-config="${{ github.workspace }}/.tfbackend/${{ github.workflow }}-tests"
+        terraform destroy -target azurerm_sql_elasticpool.elastic_pool -target azurerm_windows_virtual_machine.win_vm -target azurerm_linux_virtual_machine.linux_vm -auto-approve
+
+        $resources = (Get-AzResource -ResourceGroupName "Contoso_TESTING").ResourceId
+        foreach ($resource in $resources)
+        {
+          Get-AzDiagnosticSetting -ResourceId $resource | Remove-AzDiagnosticSetting -ResourceId $resource
+        }
+
+    - name: Create Issue On Failure
+      if: ${{ failure() }}
+      uses: ArmyContoso/create-issue-action@v1.1
+      with:
+        title: Workflow failed for commit ${{ github.event.commits[0].message }}
+        token: ${{secrets.GITHUB_TOKEN}}
+        assignees: ${{github.actor}}
+        labels: workflow-failure
+        body: Error details - https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}

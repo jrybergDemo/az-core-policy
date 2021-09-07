@@ -1,0 +1,14 @@
+{
+  "diagnosticsSettingName": {
+    "type": "String",
+    "metadata": {
+      "displayName": "Setting name"
+    }
+  },
+  "storageAccount": {
+    "type": "String",
+    "metadata": {
+      "displayName": "Storage Account reference"
+    }
+  }
+}

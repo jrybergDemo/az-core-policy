@@ -1,0 +1,119 @@
+{
+  "if": {
+        "field": "type",
+        "equals": "Microsoft.Synapse/workspaces"
+  },
+  "then": {
+    "effect": "deployIfNotExists",
+    "details": {
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "roleDefinitionIds": [
+        "/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c"
+      ],
+      "existenceCondition": {
+        "allOf": [
+          {
+            "field": "Microsoft.Insights/diagnosticSettings/logs.enabled",
+            "equals": "True"
+          },
+          {
+            "field": "Microsoft.Insights/diagnosticSettings/metrics.enabled",
+            "equals": "True"
+          },
+          {
+            "field": "Microsoft.Insights/diagnosticSettings/workspaceId",
+            "matchInsensitively": "[parameters('logAnalytics')]"
+          }
+        ]
+      },
+      "deployment": {
+        "properties": {
+          "mode": "incremental",
+          "template": {
+            "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+            "contentVersion": "1.0.0.0",
+            "parameters": {
+              "diagnosticsSettingName": {
+                "type": "string"
+              },
+              "resourceName": {
+                "type": "string"
+              },
+              "logAnalytics": {
+                "type": "string"
+              },
+              "location": {
+                "type": "string"
+              }
+            },
+            "variables": {},
+            "resources": [
+              {
+                "type": "Microsoft.Synapse/workspaces/providers/diagnosticSettings",
+                "apiVersion": "2017-05-01-preview",
+                "name": "[concat(parameters('resourceName'), '/', 'Microsoft.Insights/', parameters('diagnosticsSettingName'))]",
+                "location": "[parameters('location')]",
+                "dependsOn": [],
+                "properties": {
+                  "workspaceId": "[parameters('logAnalytics')]",
+                  "metrics": [
+                    {
+                      "category": "AllMetrics",
+                      "enabled": true,
+                      "retentionPolicy": {
+                        "days": 0,
+                        "enabled": false
+                      },
+                      "timeGrain": null
+                    }
+                  ],
+                  "logs": [
+                    {
+                      "category": "SynapseRbacOperations",
+                      "enabled": true
+                    },
+                    {
+                      "category": "GatewayApiRequests",
+                      "enabled": true
+                    },
+                    {
+                      "category": "BuiltinSqlReqsEnded",
+                      "enabled": true
+                    },
+                    {
+                      "category": "IntegrationPipelineRuns",
+                      "enabled": true
+                    },
+                    {
+                      "category": "IntegrationActivityRuns",
+                      "enabled": true
+                    },
+                    {
+                      "category": "IntegrationTriggerRuns",
+                      "enabled": true
+                    }
+                  ]
+                }
+              }
+            ],
+            "outputs": {}
+          },
+          "parameters": {
+            "diagnosticsSettingName": {
+              "value": "[parameters('diagnosticsSettingName')]"
+            },
+            "logAnalytics": {
+              "value": "[parameters('logAnalytics')]"
+            },
+            "location": {
+              "value": "[field('location')]"
+            },
+            "resourceName": {
+              "value": "[field('fullName')]"
+            }
+          }
+        }
+      }
+    }
+  }
+}

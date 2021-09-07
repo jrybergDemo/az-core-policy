@@ -1,0 +1,14 @@
+{
+    "diagnosticsSettingName": {
+      "type": "String",
+      "metadata": {
+        "displayName": "Setting name"
+      }
+    },
+    "logAnalytics": {
+      "type": "String",
+      "metadata": {
+        "displayName": "Log Analytics Workspace reference"
+      }
+    }
+  }

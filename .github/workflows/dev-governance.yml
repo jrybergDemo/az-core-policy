@@ -1,0 +1,74 @@
+name: dev-governance
+
+env:
+  ARM_CLIENT_ID: ${{ secrets.AZURE_D_CONTOSO_POLICY_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_D_CONTOSO_POLICY_CLIENT_SECRET }}
+  ARM_ENVIRONMENT: "public"
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_D_CONTOSO_CORE_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_CONTOSO_TENANT_ID }}
+  AZURE_E_POLICY_SP_CREDS: ${{ secrets.AZURE_D_CONTOSO_POLICY_SP }}
+  TF_VAR_policy_scope: DEVELOPMENT
+  TF_VAR_set_audit_or_disabled: Disabled
+  TF_VAR_pip_exclude_rg_list: '[
+    "CONTOSO_TESTING"
+  ]'
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+    - '.github/workflows/dev-governance.yml'
+    - 'governance/**'
+    - '!README.md'
+    - '!LICENSE'
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2.3.4
+
+    - name: Terraform Governance
+      continue-on-error: false
+      shell: pwsh
+      run: |
+        cd governance
+        terraform init -input=false -backend-config="${{ github.workspace }}/.tfbackend/${{ github.workflow }}"
+        #terraform destroy -auto-approve -var-file="governance.tfvars"
+        terraform plan -input=false -var-file="governance.tfvars" -out=tfplan
+        
+        Get-Item -Path "${{ github.workspace }}\governance\tfplan"
+        
+        terraform apply -auto-approve tfplan
+
+        #Create output file for tests
+        terraform output -json | Set-Content -Path ./output.json -Force
+
+    - name: Connect to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ env.AZURE_E_POLICY_SP_CREDS }}
+        environment: 'AzureCloud'
+
+    - name: Start Tests
+      continue-on-error: false
+      shell: pwsh
+      run: |
+        az policy state trigger-scan
+        $null = Install-Module -Name 'Az.Resources' -Scope CurrentUser -Force
+        Import-Module Pester, Az.Resources
+
+        $paramData = @{ PolicyScope = "${{ env.TF_VAR_policy_scope }}" }
+        $container = New-PesterContainer -Path "${{ GITHUB.WORKSPACE }}\governance" -Data $paramData
+        Invoke-Pester -Container $container -Output Detailed
+
+    # - name: Create Issue On Failure
+    #   if: ${{ failure() }}
+    #   uses: robvanderleek/create-issue-branch@v1.5
+    #   with:
+    #     title: Workflow failed for commit ${{ github.event.commits[0].message }}
+    #     token: ${{secrets.GITHUB_TOKEN}}
+    #     assignees: ${{github.actor}}
+    #     labels: workflow-failure
+    #     body: Error details - https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}

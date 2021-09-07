@@ -1,0 +1,23 @@
+{
+  "if": {
+    "allOf": [
+      {
+        "value": "[resourceGroup().name]",
+        "notIn": "[parameters('pipExcludeRgNames')]"
+      },
+      {
+        "field": "type",
+        "equals": "Microsoft.Network/networkInterfaces"
+      },
+      {
+        "not": {
+          "field": "Microsoft.Network/networkInterfaces/ipconfigurations[*].publicIpAddress.id",
+          "notLike": "*"
+        }
+      }
+    ]
+  },
+  "then": {
+    "effect": "deny"
+  }
+}
