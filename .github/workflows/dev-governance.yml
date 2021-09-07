@@ -42,9 +42,6 @@ jobs:
 
         terraform apply -auto-approve tfplan
 
-        #Create output file for tests
-        terraform output -json | Set-Content -Path ./output.json -Force
-
     - name: Connect to Azure
       uses: azure/login@v1
       with:
