@@ -37,6 +37,9 @@ jobs:
         terraform init -input=false -backend-config="${{ github.workspace }}/.tfbackend/${{ github.workflow }}"
         #terraform destroy -auto-approve -var-file="governance.tfvars"
         terraform plan -input=false -var-file="governance.tfvars" -out=tfplan
+        
+        Get-Item -Path "${{ github.workspace }}\governance\tfplan"
+
         terraform apply -auto-approve tfplan
 
     - name: Connect to Azure

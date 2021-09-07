@@ -3,11 +3,26 @@ name: bootstrap-sbx
 env:
   AZURE_E_EUS_SP_CREDS: ${{ secrets.AZURE_T_CONTOSO_CORE_SP }}
 
-  location: westus2
-  tfbackend_rg_name: D-WUS2-TFSTATE
-  tfbackend_sa_name: dwus2contosotfstate
-  tfbackend_container_name: d-wus2-contoso-tfstate
-  tf_client_obj_id: 8f5ad06b-2329-4e8e-9985-219c4b2b4049
+  # DEVELOPMENT ENVIRONMENT
+  # location: westus2
+  # tfbackend_rg_name: D-WUS2-TFSTATE
+  # tfbackend_sa_name: dwus2contosotfstate
+  # tfbackend_container_name: d-wus2-contoso-tfstate
+  # tf_client_obj_id: 8f5ad06b-2329-4e8e-9985-219c4b2b4049
+
+  # TEST ENVIRONMENT
+  # location: westus2
+  # tfbackend_rg_name: T-WUS2-TFSTATE
+  # tfbackend_sa_name: twus2contosotfstate
+  # tfbackend_container_name: t-wus2-contoso-tfstate
+  # tf_client_obj_id: 76e5ac4a-19d7-4e6e-beb0-d4ceac83b3ab
+  # PS
+  # $env:location='westus2'
+  # $env:tfbackend_rg_name='T-WUS2-TFSTATE'
+  # $env:tfbackend_sa_name='twus2contosotfstate'
+  # $env:tfbackend_container_name='t-wus2-contoso-tfstate'
+  # $env:tf_client_obj_id="76e5ac4a-19d7-4e6e-beb0-d4ceac83b3ab"
+
 
 on: workflow_dispatch
 

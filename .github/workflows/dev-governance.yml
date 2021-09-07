@@ -39,7 +39,7 @@ jobs:
         terraform plan -input=false -var-file="governance.tfvars" -out=tfplan
         
         Get-Item -Path "${{ github.workspace }}\governance\tfplan"
-        
+
         terraform apply -auto-approve tfplan
 
         #Create output file for tests
