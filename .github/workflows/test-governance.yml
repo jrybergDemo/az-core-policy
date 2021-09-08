@@ -28,7 +28,7 @@ jobs:
     environment: TEST
 
     steps:
-    - uses: actions/checkout@v2.3.4
+    - uses: actions/checkout@v2
 
     - name: Terraform Governance
       shell: pwsh
@@ -37,7 +37,13 @@ jobs:
         terraform init -input=false -backend-config="${{ github.workspace }}/.tfbackend/${{ github.workflow }}"
         #terraform destroy -auto-approve -var-file="governance.tfvars"
         terraform plan -input=false -var-file="governance.tfvars" -out=tfplan
+        
+        Get-Item -Path "${{ github.workspace }}\governance\tfplan"
+
         terraform apply -auto-approve tfplan
+
+        #Create output file for tests
+        terraform output -json | Set-Content -Path ./output.json -Force
 
     - name: Connect to Azure
       uses: azure/login@v1

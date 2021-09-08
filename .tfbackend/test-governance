@@ -1,6 +1,6 @@
-key                  = "test-cas-foundations-enterprise-gov.tfstate"
+key                  = "test-governance.tfstate"
 environment          = "public"
-resource_group_name  = "S-VA-Contoso-COR-TFSTATE"
-storage_account_name = "svaContosotfstatedata"
-container_name       = "s-va-Contoso-cor-tfstate"
+resource_group_name  = "T-WUS2-TFSTATE"
+storage_account_name = "twus2contosotfstate"
+container_name       = "t-wus2-contoso-tfstate"
 use_msi              = true

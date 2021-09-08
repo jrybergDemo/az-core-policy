@@ -39,11 +39,8 @@ jobs:
         terraform plan -input=false -var-file="governance.tfvars" -out=tfplan
         
         Get-Item -Path "${{ github.workspace }}\governance\tfplan"
-        
-        terraform apply -auto-approve tfplan
 
-        #Create output file for tests
-        terraform output -json | Set-Content -Path ./output.json -Force
+        terraform apply -auto-approve tfplan
 
     - name: Connect to Azure
       uses: azure/login@v1
