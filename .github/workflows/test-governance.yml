@@ -42,32 +42,180 @@ jobs:
 
         terraform apply -auto-approve tfplan
 
-        #Create output file for tests
-        terraform output -json | Set-Content -Path ./output.json -Force
+  tests:
+    needs: [terraform]
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2.3.4
 
     - name: Connect to Azure
       uses: azure/login@v1
       with:
         creds: ${{ env.AZURE_E_POLICY_SP_CREDS }}
-        environment: 'AzureCloud'
+        environment: 'AzureUSGovernment'
+        enable-AzPSSession: true
 
-    - name: Initiate Policy Scan
+    - name: Test Policy
       shell: pwsh
       run: |
-        az policy state trigger-scan --no-wait
-        $null = Install-Module -Name 'Az.Resources' -Scope CurrentUser -Force
-        Import-Module Pester, Az.Resources
-
-        $paramData = @{ PolicyScope = "${{ env.TF_VAR_policy_scope }}" }
-        $container = New-PesterContainer -Path "${{ GITHUB.WORKSPACE }}\governance" -Data $paramData
+        $testScope = "/subscriptions/${{ env.ARM_SUBSCRIPTION_ID }}/resourceGroups/${{ env.TF_VAR_test_rg_name }}"
+        write-host 'Installing PS module Az'
+        $null = Install-Module -Name Az -Scope CurrentUser -Force
+        Import-Module Pester, Az.Resources, Az.Monitor, Az.PolicyInsights, Az.Sql
+        write-host 'Retrieving Terraform outputs'
+        cd monitoring/tests/terraform
+        terraform init -input=false -backend-config="${{ github.workspace }}/.tfbackend/${{ github.workflow }}-tests"
+        $tfOutputs = terraform output -json | ConvertFrom-Json -AsHashtable
+        $resourceIdList = $tfoutputs.Values.value
+        $allResourceIdList = @()
+        foreach ($resource in $resourceIdList)
+        {
+          foreach ($resVal in $resource.GetEnumerator())
+          {
+            $allResourceIdList += $resVal.Value
+          }
+        }
+        write-host 'Start Resource List'
+        $allResourceIdList
+        write-host 'End Resource List'
+        write-host 'Remove sql server auditing'
+        Get-AzSqlServer -ResourceGroupName '${{ env.TF_VAR_test_rg_name }}' -ServerName 'eitaastesttxsqlserver' | Remove-AzSqlServerAudit
+        Get-AzSqlServer -ResourceGroupName '${{ env.TF_VAR_test_rg_name }}' -ServerName 'eitaastestvasqlserver' | Remove-AzSqlServerAudit
+        foreach ($resourceId in $allResourceIdList)
+        {
+          $resource = Get-AzResource -ResourceId $resourceId -ErrorAction SilentlyContinue
+          if ($null -ne $resource)
+          {
+            write-host "Removing Diag Settings from $resourceId"
+            Get-AzDiagnosticSetting -ResourceId $resourceId -WarningAction SilentlyContinue | Remove-AzDiagnosticSetting -ResourceId $resourceId -WarningAction SilentlyContinue
+            if ($resource.resourceType -eq 'Microsoft.Storage/storageAccounts')
+            {
+              write-host "Removing Diag Settings from $resourceId"
+              Get-AzDiagnosticSetting -ResourceId $resourceId -WarningAction SilentlyContinue | Remove-AzDiagnosticSetting -ResourceId $resourceId -WarningAction SilentlyContinue
+              Get-AzDiagnosticSetting -ResourceId "$resourceId/tableServices/default" -WarningAction SilentlyContinue | Remove-AzDiagnosticSetting -ResourceId "$resourceId/tableServices/default" -WarningAction SilentlyContinue
+              Get-AzDiagnosticSetting -ResourceId "$resourceId/fileServices/default" -WarningAction SilentlyContinue | Remove-AzDiagnosticSetting -ResourceId "$resourceId/fileServices/default" -WarningAction SilentlyContinue
+              Get-AzDiagnosticSetting -ResourceId "$resourceId/queueServices/default" -WarningAction SilentlyContinue | Remove-AzDiagnosticSetting -ResourceId "$resourceId/queueServices/default" -WarningAction SilentlyContinue
+              Get-AzDiagnosticSetting -ResourceId "$resourceId/blobServices/default" -WarningAction SilentlyContinue | Remove-AzDiagnosticSetting -ResourceId "$resourceId/blobServices/default" -WarningAction SilentlyContinue
+            }
+          }
+          else
+          {
+            write-warning "Resource is missing: $resourceId"
+          }
+        }
+        write-host 'Removing existing remediations on target resource group'
+        Get-AzPolicyRemediation -Scope $testScope | Remove-AzPolicyRemediation
+        # Deleting resources with agents
+        terraform destroy `
+          -target azurerm_sql_elasticpool.elastic_pool `
+          -target azurerm_windows_virtual_machine.win_vm `
+          -target azurerm_linux_virtual_machine.linux_vm `
+          -auto-approve
+        terraform plan -input=false -out=tfplan
+        terraform apply -auto-approve tfplan
+        write-host 'Sleeping for 7 minutes while newly deployed resources settle.'
+        sleep 420
+        write-host 'Run policy scan on newly created resources'
+        Start-AzPolicyComplianceScan -ResourceGroupName '${{ env.TF_VAR_test_rg_name }}'
+        write-host 'Remediating required policies'
+        $policyFilter = "PolicySetDefinitionName eq 'EITaaS_Monitoring' and ComplianceState eq 'NonCompliant' and PolicyDefinitionAction eq 'deployIfNotExists'"
+        $nonCompliantPolicies = Get-AzPolicyState -ResourceGroupName '${{ env.TF_VAR_test_rg_name }}' -Filter $policyFilter
+        $uniqueNonCompliantPolicies = $nonCompliantPolicies | Sort-Object -Unique -Property 'PolicyDefinitionName'
+        $remediations = @()
+        foreach ($policy in $uniqueNonCompliantPolicies)
+        {
+          write-host "Creating remediation for $($policy.PolicyDefinitionName)"
+          $params = @{
+            #Scope                       = $testScope
+            Name                        = "testrem.$($policy.PolicyDefinitionName)"
+            PolicyAssignmentId          = $policy.PolicyAssignmentId
+            PolicyDefinitionReferenceId = $policy.PolicyDefinitionReferenceId
+          }
+          $remediations += Start-AzPolicyRemediation @params
+        }
+        write-host 'Waiting for remediations to complete'
+        $failedRemediations = @()
+        for ($i = 1 ; $i -lt 11; $i++)
+        {
+          $remediationsInProgress = $false
+          foreach ($remediation in $remediations)
+          {
+            write-host "'$($remediation.Name)' task '$($remediation.ProvisioningState)'"
+            if ($remediation.ProvisioningState -eq 'Failed')
+            {
+              $failedRemediations += $remediation
+              write-host "remediation $($remediation.Name) failed - restarting)"
+              $params = @{
+                #Scope                       = $testScope
+                Name                        = $remediation.Name
+                PolicyAssignmentId          = $remediation.PolicyAssignmentId
+                PolicyDefinitionReferenceId = $remediation.PolicyDefinitionReferenceId
+              }
+              Start-AzPolicyRemediation @params
+            }
+            elseif ($remediation.ProvisioningState -ne 'Succeeded')
+            {
+              $remediationsInProgress = $true
+            }
+          }
+          if (! $remediationsInProgress)
+          {
+            break
+          }
+          write-host "Waiting 60 seconds for remediations to finish: $i of 10"
+          sleep 60
+          $remediations = Get-AzPolicyRemediation -Scope $testScope
+        }
+        if ($failedRemediations)
+        {
+          write-host 'Attempting failed remediations a second time'
+          $remediations = @()
+          foreach ($remediation in $failedRemediations)
+          {
+            $params = @{
+              Scope                       = $testScope
+              Name                        = $remediation.Name
+              PolicyAssignmentId          = $remediation.PolicyAssignmentId
+              PolicyDefinitionReferenceId = $remediation.PolicyDefinitionReferenceId
+            }
+            $remediations += Start-AzPolicyRemediation @params
+          }
+          write-host 'Waiting for failed remediations to complete'
+          $remediationError = $false
+          for ($i = 1 ; $i -lt 11; $i++)
+          {
+            $remediationsInProgress = $false
+            foreach ($remediation in $remediations)
+            {
+              write-host "'$($remediation.Name)' task '$($remediation.ProvisioningState)'"
+              if ($remediation.ProvisioningState -eq 'Failed')
+              {
+                write-host "$($remediation.Name) failed."
+                $remediationError = $true
+              }
+              elseif ($remediation.ProvisioningState -ne 'Succeeded')
+              {
+                $remediationsInProgress = $true
+              }
+            }
+            if (! $remediationsInProgress)
+            {
+              break
+            }
+            write-host "Waiting 60 seconds for remediations to finish: $i of 10"
+            sleep 60
+            $remediations = Get-AzPolicyRemediation -Scope $testScope
+          }
+          if ($remediationError)
+          {
+            throw "Remediations have failed."
+          }
+        }
+        write-host 'Sleeping for 7 minutes while newly applied remediations settle.'
+        sleep 420
+        write-host 'Run policy scan again with remediations in place'
+        Start-AzPolicyComplianceScan -ResourceGroupName ${{ env.TF_VAR_test_rg_name }}
+        $paramData = @{ ResourceIdList = $allResourceIdList }
+        $container = New-PesterContainer -Path "${{ GITHUB.WORKSPACE }}\monitoring" -Data $paramData
         Invoke-Pester -Container $container -Output Detailed
-
-    # - name: Create Issue On Failure
-    #   if: ${{ failure() }}
-    #   uses: robvanderleek/create-issue-branch@v1.5
-    #   with:
-    #     title: Workflow failed for commit ${{ github.event.commits[0].message }}
-    #     token: ${{secrets.GITHUB_TOKEN}}
-    #     assignees: ${{github.actor}}
-    #     labels: workflow-failure
-    #     body: Error details - https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
