@@ -1,0 +1,195 @@
+{
+    "if": {
+      "field": "type",
+      "equals": "Microsoft.Databricks/workspaces"
+    },
+    "then": {
+      "effect": "deployIfNotExists",
+      "details": {
+        "type": "Microsoft.Insights/diagnosticSettings",
+        "roleDefinitionIds": [
+          "/providers/Microsoft.Authorization/roleDefinitions/749f88d5-cbae-40b8-bcfc-e573ddc772fa",
+          "/providers/Microsoft.Authorization/roleDefinitions/92aaf0da-9dab-42b6-94a3-d43ce8d16293"
+        ],
+        "existenceCondition": {
+          "allOf": [
+            {
+              "field": "Microsoft.Insights/diagnosticSettings/logs.enabled",
+              "equals": "True"
+            },
+            {
+              "field": "Microsoft.Insights/diagnosticSettings/metrics.enabled",
+              "equals": "True"
+            },
+            {
+              "field": "Microsoft.Insights/diagnosticSettings/workspaceId",
+              "matchInsensitively": "[parameters('logAnalytics')]"
+            },
+            {
+              "field": "Microsoft.Insights/diagnosticSettings/storageAccountId",
+              "matchInsensitively": "[if(equals(field('location'), 'usgovvirginia'), parameters('storageAccount'), parameters('storageAccountTx'))]"
+            }
+          ]
+        },
+        "deployment": {
+          "properties": {
+            "mode": "incremental",
+            "template": {
+              "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+              "contentVersion": "1.0.0.0",
+              "parameters": {
+                "diagnosticsSettingName": {
+                  "type": "string"
+                },
+                "resourceName": {
+                  "type": "string"
+                },
+                "logAnalytics": {
+                  "type": "string"
+                },
+                "storageAccount": {
+                  "type": "string"
+                },
+                "storageAccountTx": {
+                  "type": "string"
+                },
+                "location": {
+                  "type": "string"
+                }
+              },
+              "variables": {},
+              "resources": [
+                {
+                  "type": "Microsoft.Databricks/workspaces/providers/diagnosticSettings",
+                  "apiVersion": "2017-05-01-preview",
+                  "name": "[concat(parameters('resourceName'), '/', 'Microsoft.Insights/', parameters('diagnosticsSettingName'))]",
+                  "location": "[parameters('location')]",
+                  "dependsOn": [],
+                  "properties": {
+                    "workspaceId": "[parameters('logAnalytics')]",
+                    "storageAccountId": "[if(equals(parameters('location'), 'usgovvirginia'), parameters('storageAccount'), parameters('storageAccountTx'))]",
+                    "metrics": [],
+                    "logs": [
+                      {
+                        "category": "dbfs",
+                        "enabled": true
+                      },
+                      {
+                        "category": "clusters",
+                        "enabled": true
+                      },
+                      {
+                        "category": "accounts",
+                        "enabled": true
+                      },
+                      {
+                        "category": "jobs",
+                        "enabled": true
+                      },
+                      {
+                        "category": "notebook",
+                        "enabled": true
+                      },
+                      {
+                        "category": "ssh",
+                        "enabled": true
+                      },
+                      {
+                        "category": "workspace",
+                        "enabled": true
+                      },
+                      {
+                        "category": "secrets",
+                        "enabled": true
+                      },
+                      {
+                        "category": "sqlPermissions",
+                        "enabled": true
+                      },
+                      {
+                        "category": "instancePools",
+                        "enabled": true
+                      },
+                      {
+                        "category": "sqlanalytics",
+                        "enabled": true
+                      },
+                      {
+                        "category": "genie",
+                        "enabled": true
+                      },
+                      {
+                        "category": "globalInitScripts",
+                        "enabled": true
+                      },
+                      {
+                        "category": "iamRole",
+                        "enabled": true
+                      },
+                      {
+                        "category": "mlflowExperiment",
+                        "enabled": true
+                      },
+                      {
+                        "category": "featureStore",
+                        "enabled": true
+                      },
+                      {
+                        "category": "RemoteHistoryService",
+                        "enabled": true
+                      },
+                      {
+                        "category": "mlflowAcledArtifact",
+                        "enabled": true
+                      },
+                      {
+                        "category": "databrickssql",
+                        "enabled": true
+                      },
+                      {
+                        "category": "deltaPipelines",
+                        "enabled": true
+                      },
+                      {
+                        "category": "modelRegistry",
+                        "enabled": true
+                      },
+                      {
+                        "category": "repos",
+                        "enabled": true
+                      },
+                      {
+                        "category": "unityCatalog",
+                        "enabled": true
+                      }
+                    ]
+                  }
+                }
+              ],
+              "outputs": {}
+            },
+            "parameters": {
+              "diagnosticsSettingName": {
+                "value": "[parameters('diagnosticsSettingName')]"
+              },
+              "logAnalytics": {
+                "value": "[parameters('logAnalytics')]"
+              },
+              "storageAccount": {
+                "value": "[parameters('storageAccount')]"
+              },
+              "storageAccountTx": {
+                "value": "[parameters('storageAccountTx')]"
+              },
+              "location": {
+                "value": "[field('location')]"
+              },
+              "resourceName": {
+                "value": "[field('fullName')]"
+              }
+            }
+          }
+        }
+      }
+    }
+  }

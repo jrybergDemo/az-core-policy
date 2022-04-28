@@ -1,0 +1,143 @@
+{
+  "if": {
+    "field": "type",
+    "equals": "Microsoft.Synapse/workspaces"
+  },
+  "then": {
+    "effect": "deployIfNotExists",
+    "details": {
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "roleDefinitionIds": [
+        "/providers/Microsoft.Authorization/roleDefinitions/749f88d5-cbae-40b8-bcfc-e573ddc772fa",
+        "/providers/Microsoft.Authorization/roleDefinitions/92aaf0da-9dab-42b6-94a3-d43ce8d16293"
+      ],
+      "existenceCondition": {
+        "allOf": [
+          {
+            "count": {
+              "field": "Microsoft.Insights/diagnosticSettings/logs[*]",
+              "where": {
+                "allOf": [
+                  {
+                    "field": "Microsoft.Insights/diagnosticSettings/logs[*].Category",
+                    "in": [
+                      "SynapseRbacOperations",
+                      "GatewayApiRequests",
+                      "BuiltinSqlReqsEnded",
+                      "IntegrationPipelineRuns",
+                      "IntegrationActivityRuns",
+                      "IntegrationTriggerRuns"
+                    ]
+                  },
+                  {
+                    "field": "Microsoft.Insights/diagnosticSettings/logs[*].Enabled",
+                    "equals": "True"
+                  }
+                ]
+              }
+            },
+            "Equals": 6
+          },
+          {
+            "field": "Microsoft.Insights/diagnosticSettings/workspaceId",
+            "matchInsensitively": "[parameters('logAnalytics')]"
+          },
+          {
+            "field": "Microsoft.Insights/diagnosticSettings/storageAccountId",
+            "matchInsensitively": "[if(equals(field('location'), 'usgovvirginia'), parameters('storageAccount'), parameters('storageAccountTx'))]"
+          }
+        ]
+      },
+      "deployment": {
+        "properties": {
+          "mode": "incremental",
+          "template": {
+            "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+            "contentVersion": "1.0.0.0",
+            "parameters": {
+              "diagnosticsSettingName": {
+                "type": "string"
+              },
+              "resourceName": {
+                "type": "string"
+              },
+              "logAnalytics": {
+                "type": "string"
+              },
+              "storageAccount": {
+                "type": "string"
+              },
+              "storageAccountTx": {
+                "type": "string"
+              },
+              "location": {
+                "type": "string"
+              }
+            },
+            "variables": {},
+            "resources": [
+              {
+                "type": "Microsoft.Synapse/workspaces/providers/diagnosticSettings",
+                "apiVersion": "2017-05-01-preview",
+                "name": "[concat(parameters('resourceName'), '/', 'Microsoft.Insights/', parameters('diagnosticsSettingName'))]",
+                "location": "[parameters('location')]",
+                "dependsOn": [],
+                "properties": {
+                  "workspaceId": "[parameters('logAnalytics')]",
+                  "storageAccountId": "[if(equals(parameters('location'), 'usgovvirginia'), parameters('storageAccount'), parameters('storageAccountTx'))]",
+                  "logs": [
+                    {
+                      "category": "SynapseRbacOperations",
+                      "enabled": true
+                    },
+                    {
+                      "category": "GatewayApiRequests",
+                      "enabled": true
+                    },
+                    {
+                      "category": "BuiltinSqlReqsEnded",
+                      "enabled": true
+                    },
+                    {
+                      "category": "IntegrationPipelineRuns",
+                      "enabled": true
+                    },
+                    {
+                      "category": "IntegrationActivityRuns",
+                      "enabled": true
+                    },
+                    {
+                      "category": "IntegrationTriggerRuns",
+                      "enabled": true
+                    }
+                  ]
+                }
+              }
+            ],
+            "outputs": {}
+          },
+          "parameters": {
+            "diagnosticsSettingName": {
+              "value": "[parameters('diagnosticsSettingName')]"
+            },
+            "logAnalytics": {
+              "value": "[parameters('logAnalytics')]"
+            },
+            "storageAccount": {
+              "value": "[parameters('storageAccount')]"
+            },
+            "storageAccountTx": {
+              "value": "[parameters('storageAccountTx')]"
+            },
+            "location": {
+              "value": "[field('location')]"
+            },
+            "resourceName": {
+              "value": "[field('fullName')]"
+            }
+          }
+        }
+      }
+    }
+  }
+}

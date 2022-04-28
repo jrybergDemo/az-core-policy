@@ -1,0 +1,26 @@
+{
+  "diagnosticsSettingName": {
+    "type": "String",
+    "metadata": {
+      "displayName": "Setting name"
+    }
+  },
+  "logAnalytics": {
+    "type": "String",
+    "metadata": {
+      "displayName": "Log Analytics Workspace reference"
+    }
+  },
+  "storageAccount": {
+    "type": "String",
+    "metadata": {
+      "displayName": "Storage Account reference"
+    }
+  },
+  "storageAccountTx": {
+    "type": "String",
+    "metadata": {
+      "displayName": "Storage Account reference in TX region"
+    }
+  }
+}

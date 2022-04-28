@@ -1,0 +1,131 @@
+{
+  "if": {
+    "allOf": [
+      {
+        "field": "type",
+        "equals": "Microsoft.Sql/servers"
+      },
+      {
+        "field": "kind",
+        "NotContains": ",analytics"
+      }
+    ]
+  },
+  "then": {
+    "effect": "deployIfNotExists",
+    "details": {
+      "type": "Microsoft.Sql/servers/auditingSettings",
+      "name": "Default",
+      "existenceCondition": {
+        "allOf": [
+          {
+          "field": "Microsoft.Sql/auditingSettings.state",
+          "equals": "Enabled"
+          },
+          {
+          "field": "Microsoft.Sql/servers/auditingSettings/storageAccountSubscriptionId",
+          "equals": "[subscription().subscriptionId]"
+          },
+          {
+          "field": "Microsoft.Sql/servers/auditingSettings/isAzureMonitorTargetEnabled",
+          "equals": "true"
+          }
+        ]
+      },
+      "roleDefinitionIds": [
+        "/providers/Microsoft.Authorization/roleDefinitions/056cd41c-7e88-42e1-933e-88ba6a50c9c3"
+      ],
+      "deployment": {
+        "properties": {
+          "mode": "incremental",
+          "template": {
+            "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+            "contentVersion": "1.0.0.0",
+            "parameters": {
+              "diagnosticsSettingName": {
+                "type": "string"
+              },
+              "resourceName": {
+                "type": "string"
+              },
+              "storageAccount": {
+                "type": "string"
+              },
+              "storageAccountTx": {
+                "type": "string"
+              },
+              "logAnalytics": {
+                "type": "string"
+              },
+              "location": {
+                "type": "string"
+              }
+            },
+            "variables": {
+              "diagnosticSettingsName": "SQLSecurityAuditEvents_3d229c42-c7e7-4c97-9a99-ec0d0d8b86c1",
+              "storageAccountId": "[if(equals(parameters('location'), 'usgovvirginia'), parameters('storageAccount'), parameters('storageAccountTx'))]"
+            },
+            "resources": [
+              {
+                "type": "Microsoft.Sql/servers/databases/providers/diagnosticSettings",
+                "name": "[concat(parameters('resourceName'),'/master/microsoft.insights/',variables('diagnosticSettingsName'))]",
+                "apiVersion": "2017-05-01-preview",
+                "location": "[parameters('location')]",
+                "properties": {
+                  "name": "[variables('diagnosticSettingsName')]",
+                  "workspaceId": "[parameters('logAnalytics')]",
+                  "logs": [
+                    {
+                      "category": "SQLSecurityAuditEvents",
+                      "enabled": true,
+                      "retentionPolicy": {
+                        "days": 0,
+                        "enabled": false
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "[concat(parameters('resourceName'), '/', parameters('diagnosticsSettingName'))]",
+                "type": "Microsoft.Sql/servers/auditingSettings",
+                "apiVersion": "2021-02-01-preview",
+                "dependsOn": [
+                  "[concat('Microsoft.Sql/servers/', parameters('resourceName'),'/databases/master/providers/microsoft.insights/diagnosticSettings/', variables('diagnosticSettingsName'))]"
+                ],
+                "properties": {
+                  "state": "Enabled",
+                  "isAzureMonitorTargetEnabled": true,
+                  "storageEndpoint": "[reference(variables('storageAccountId'), '2019-06-01').PrimaryEndpoints.Blob]",
+                  "storageAccountAccessKey": "[listKeys(variables('storageAccountId'), '2019-06-01').keys[0].value]",
+                  "storageAccountSubscriptionId": "[subscription().subscriptionId]"
+
+                }
+              }            
+            ]
+          },
+          "parameters": {
+            "diagnosticsSettingName": {
+              "value": "[parameters('diagnosticsSettingName')]"
+            },
+            "resourceName": {
+              "value": "[field('name')]"
+            },
+            "location": {
+              "value": "[field('location')]"
+            },
+            "storageAccount": {
+              "value": "[parameters('storageAccount')]"
+            },
+            "storageAccountTx": {
+              "value": "[parameters('storageAccountTx')]"
+            },
+            "logAnalytics": {
+              "value": "[parameters('logAnalytics')]"
+            }
+          }
+        }
+      }
+    }
+  }
+}

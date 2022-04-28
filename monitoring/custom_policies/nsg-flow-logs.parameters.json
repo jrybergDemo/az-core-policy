@@ -1,0 +1,34 @@
+{
+  "logAnalytics": {
+    "type": "String",
+    "metadata": {
+      "displayName": "Log Analytics Workspace reference"
+    }
+  },
+  "storageAccount": {
+    "type": "String",
+    "metadata": {
+      "displayName": "Storage Account reference"
+    }
+  },
+  "storageAccountTx": {
+    "type": "String",
+    "metadata": {
+      "displayName": "Storage Account reference in TX region"
+    }
+  },
+  "retentionPolicy_days": {
+    "type": "Integer",
+    "defaultValue": 0,
+    "metadata": {
+      "displayName": "The flow log retention storage in days. Use 0 for 'forever'."
+    }
+  },
+  "trafficAnalyticsInterval_min": {
+    "type": "Integer",
+    "defaultValue": 60,
+    "metadata": {
+      "displayName": "The flow log workspace analytics interval in minutes. Valid values are 10 and 60."
+    }
+  }
+}
