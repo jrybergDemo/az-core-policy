@@ -752,7 +752,7 @@ policy_list = {
     id = "/providers/Microsoft.Authorization/policyDefinitions/7c1b1214-f927-48bf-8882-84f0af6588b1"
     name = "Diagnostic logs in Virtual Machine Scale Sets should be enabled"
   }
-    "235359c5-7c52-4b82-9055-01c75cf9f60e" = {
+  "235359c5-7c52-4b82-9055-01c75cf9f60e" = {
     id = "/providers/Microsoft.Authorization/policyDefinitions/235359c5-7c52-4b82-9055-01c75cf9f60e"
     name = "Service Bus should use a virtual network service endpoint"
   }

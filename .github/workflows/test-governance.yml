@@ -10,7 +10,8 @@ env:
   TF_VAR_policy_scope: TEST
   TF_VAR_set_audit_or_disabled: Disabled
   TF_VAR_pip_exclude_rg_list: '[
-    "Contoso_TESTING"
+    "Contoso_TESTING",
+    "packer_builds"
   ]'
 
 on:
