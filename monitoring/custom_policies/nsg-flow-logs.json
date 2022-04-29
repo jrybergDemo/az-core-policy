@@ -1,0 +1,145 @@
+{
+    "if": {
+      "field": "type",
+      "equals": "Microsoft.Network/networkSecurityGroups"
+    },
+    "then": {
+      "effect": "deployIfNotExists",
+      "details": {
+        "type": "Microsoft.Network/networkWatchers/flowLogs",
+        "resourceGroupName": "NetworkWatcherRG",
+        "name": "[concat('networkwatcher_', field('location'), '/Microsoft.Network', resourceGroup().name, field('name'))]",
+        "existenceCondition": {
+          "allOf": [
+            {
+              "field": "Microsoft.Network/networkWatchers/flowLogs/enabled",
+              "equals": "true"
+            },
+            {
+              "field": "Microsoft.Network/networkWatchers/flowLogs/storageId",
+              "matchInsensitively": "[if(equals(field('location'), 'usgovvirginia'), parameters('storageAccount'), parameters('storageAccountTx'))]"
+            },
+            {
+              "field": "Microsoft.Network/networkWatchers/flowLogs/flowAnalyticsConfiguration.networkWatcherFlowAnalyticsConfiguration.enabled",
+              "equals": "true"
+            },
+            {
+              "field": "Microsoft.Network/networkWatchers/flowLogs/retentionPolicy.enabled",
+              "equals": "true"
+            },
+            {
+              "field": "Microsoft.Network/networkWatchers/flowLogs/retentionPolicy.days",
+              "equals": "[parameters('retentionPolicy_days')]"
+            },  
+            {
+              "field": "Microsoft.Network/networkWatchers/flowLogs/flowAnalyticsConfiguration.networkWatcherFlowAnalyticsConfiguration.trafficAnalyticsInterval",
+              "equals": "[parameters('trafficAnalyticsInterval_min')]"
+            },
+            {
+              "field": "Microsoft.Network/networkWatchers/flowLogs/flowAnalyticsConfiguration.networkWatcherFlowAnalyticsConfiguration.workspaceResourceId",
+              "equals": "[parameters('logAnalytics')]"
+            }
+          ]
+        },
+        "roleDefinitionIds": [
+          "/providers/microsoft.authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c"
+        ],
+        "deployment": {
+          "properties": {
+            "mode": "incremental",
+            "template": {
+              "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+              "contentVersion": "1.0.0.0",
+              "parameters": {
+                "logAnalytics": {
+                  "type": "string"
+                },  
+                "storageAccount": {
+                  "type": "string"
+                },
+                "storageAccountTx": {
+                  "type": "string"
+                },
+                "nsgName": {
+                  "type": "String"
+                },
+                "nsgRG": {
+                  "type": "String"
+                },
+                "location": {
+                  "type": "String"
+                },
+                "targetResource": {
+                  "type": "string"
+                },
+                "retentionPolicy_days": {
+                  "type": "int"
+                },
+                "trafficAnalyticsInterval_min": {
+                  "type": "int"
+                }  
+              },
+              "variables": {},
+              "resources": [
+                {
+                  "type": "Microsoft.Network/networkWatchers/flowLogs",
+                  "name": "[concat('networkwatcher_', parameters('location'), '/Microsoft.Network', parameters('nsgRG'), parameters('nsgName'))]",
+                  "apiVersion": "2019-11-01",
+                  "location": "[parameters('location')]",
+                  "properties": {
+                    "targetResourceId": "[parameters('targetResource')]",
+                    "storageId": "[if(equals(parameters('location'), 'usgovvirginia'), parameters('storageAccount'), parameters('storageAccountTx'))]",
+                    "enabled": "true",
+                    "flowAnalyticsConfiguration": {
+                      "networkWatcherFlowAnalyticsConfiguration": {
+                        "enabled": true,
+                        "workspaceResourceId": "[parameters('logAnalytics')]",
+                        "trafficAnalyticsInterval": "[parameters('trafficAnalyticsInterval_min')]"
+                      }
+                    },
+                    "retentionPolicy": {
+                      "days": "[parameters('retentionPolicy_days')]",
+                      "enabled": true
+                    },
+                    "format": {
+                      "type": "JSON",
+                      "version": 2
+                    }
+                  }
+                }
+              ]
+            },
+            "parameters": {
+              "logAnalytics": {
+                "value": "[parameters('logAnalytics')]"
+              },  
+              "storageAccount": {
+                "value": "[parameters('storageAccount')]"
+              },
+              "storageAccountTx": {
+                "value": "[parameters('storageAccountTx')]"
+              },
+              "nsgName": {
+                "value": "[field('name')]"
+              },
+              "nsgRG": {
+                "value": "[resourceGroup().name]"
+              },
+              "location": {
+                "value": "[field('location')]"
+              },
+              "targetResource": {
+                "value": "[concat(resourceGroup().id, '/providers/Microsoft.Network/networkSecurityGroups/', field('name'))]"
+              },
+              "retentionPolicy_days": {
+                "value": "[parameters('retentionPolicy_days')]"
+              },
+              "trafficAnalyticsInterval_min": {
+                "value": "[parameters('trafficAnalyticsInterval_min')]"
+              }  
+            }
+          }
+        }
+      }
+    }
+}
