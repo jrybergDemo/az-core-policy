@@ -1,0 +1,45 @@
+{
+  "if": {
+    "allOf": [
+      {
+        "value": "[resourceGroup().id]",
+        "notIn": "[parameters('pipExcludeRgIds')]"
+      },
+      {
+        "anyof": [
+          {
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.Network/networkInterfaces"
+              },
+              {
+                "not": {
+                  "field": "Microsoft.Network/networkInterfaces/ipconfigurations[*].publicIpAddress.id",
+                  "notLike": "*"
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.Compute/virtualMachineScaleSets"
+              },
+              {
+                "not": {
+                  "field": "Microsoft.Compute/virtualMachineScaleSets/virtualMachineProfile.networkProfile.networkInterfaceConfigurations[*].ipConfigurations[*].publicIPAddressConfiguration.Name",
+                  "notLike": "*"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "then": {
+    "effect": "deny"
+  }
+}
