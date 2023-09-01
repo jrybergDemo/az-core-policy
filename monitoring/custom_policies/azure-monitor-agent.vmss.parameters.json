@@ -1,0 +1,9 @@
+{
+    "listOfImageIdsToInclude": {
+      "type": "Array",
+      "metadata": {
+        "displayName": "Optional: List of VM images that have supported Linux or Windows OS to add to scope"
+      },
+      "defaultValue": []
+    }
+  }

@@ -83,6 +83,10 @@
                     {
                       "category": "AuditEvent",
                       "enabled": true
+                    },
+                    {
+                      "category": "AzurePolicyEvaluationDetails",
+                      "enabled": true
                     }
                   ]
                 }

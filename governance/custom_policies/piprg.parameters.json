@@ -1,8 +1,9 @@
 {
-  "pipExcludeRgNames": {
+  "pipExcludeRgIds": {
     "type": "Array",
     "metadata": {
-      "displayName": "Resource Group Names to be excluded to alllow Public IPs (PIP)"
-    }
+      "displayName": "Resource Group Ids to be excluded to allow Public IPs (PIP)"
+    },
+    "defaultValue": []
   }
 }

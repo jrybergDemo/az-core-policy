@@ -1,0 +1,9 @@
+{
+  "blobExcludeRgIds": {
+    "type": "Array",
+    "metadata": {
+      "displayName": "Resource Group Ids to be excluded to alllow Public Accessible Storage Account"
+    },
+    "defaultValue": []
+  }
+}

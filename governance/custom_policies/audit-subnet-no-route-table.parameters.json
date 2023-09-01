@@ -1,0 +1,14 @@
+{
+    "subnetExcludeNames": {
+        "type": "Array",
+        "metadata": {
+            "displayName": "Subnet names to be excluded from audit policy. These subnets do not need route tables."
+        }
+    },
+    "subnetExcludeRgNames": {
+        "type": "Array",
+        "metadata": {
+            "displayName": "Resource groups to be excluded from audit policy. These subnets do not need route tables."
+        }
+    }
+}

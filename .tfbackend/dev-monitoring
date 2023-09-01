@@ -1,6 +1,6 @@
 key                  = "cd-cas-foundations-enterprise-moni.tfstate"
-environment          = "public"
-resource_group_name  = "D-WUS2-TFSTATE"
-storage_account_name = "dwus2contosotfstate"
-container_name       = "d-wus2-contoso-tfstate"
+environment          = "usgovernment"
+resource_group_name  = "D-VA-EITAAS-COR-TFSTATE"
+storage_account_name = "dvaeitaastfstatedata"
+container_name       = "d-va-eitaas-cor-tfstate"
 use_msi              = true

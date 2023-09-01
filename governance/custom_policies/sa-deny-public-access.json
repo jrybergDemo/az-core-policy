@@ -2,6 +2,10 @@
   "if": {
     "allOf": [
       {
+        "value": "[resourceGroup().id]",
+        "notIn": "[parameters('blobExcludeRgIds')]"
+      },
+      {
         "field": "type",
         "equals": "Microsoft.Storage/storageAccounts"
       },

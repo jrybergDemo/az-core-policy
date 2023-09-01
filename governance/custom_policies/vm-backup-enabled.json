@@ -1,0 +1,40 @@
+{
+  "if": {
+    "allOf": [
+      {
+        "field": "type",
+        "equals": "Microsoft.Compute/virtualMachines"
+      },
+      {
+        "field": "id",
+        "notContains": "/resourceGroups/databricks-rg-"
+      },
+      {
+        "field": "Microsoft.Compute/imagePublisher",
+        "notEquals": "azureopenshift"
+      },
+      {
+        "field": "Microsoft.Compute/imagePublisher",
+        "notEquals": "AzureDatabricks"
+      },
+      {
+        "field": "name",
+        "notContains": "test"
+      },
+      {
+        "value": "[resourceGroup().name]",
+        "notContains": "test"
+      },
+      {
+        "value": "[resourceGroup().id]",
+        "notIn": "[parameters('vmBackupExcludeRgIds')]"
+      }
+    ]
+  },
+  "then": {
+    "effect": "AuditIfNotExists",
+    "details": {
+      "type": "Microsoft.RecoveryServices/backupprotecteditems"
+    }
+  }
+}

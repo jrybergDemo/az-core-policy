@@ -1,0 +1,99 @@
+name: sbx-governance
+
+env:
+  ARM_CLIENT_ID: ${{ secrets.AZURE_S_EITAAS_POLICY_SP_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_S_EITAAS_POLICY_SP_CLIENT_SECRET }}
+  ARM_ENVIRONMENT: "usgovernment"
+  ARM_PARTNER_ID: ${{ secrets.AZURE_CUA_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_S_EITAAS_CAS_SP_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_S_EITAAS_CAS_SP_TENANT_ID }}
+  AZURE_E_POLICY_SP_CREDS: ${{ secrets.AZURE_S_EITAAS_POLICY_SP }}
+  AZURE_GOV_ENV:     AzureUSGovernment
+  AZURE_POLICY_SET: "EITaaS_Governance"
+  AZURE_POLICY_SCOPE: "EITaaS_Sandbox"
+  AZURE_POLICY_DEF_STORAGE: "Deny Anonymous Access - Storage Account"
+  AZURE_POLICY_DEF_PIP: "Deny Public IP - NIC Association with Resource Group exception"
+  TF_VAR_policy_scope: EITaaS_Sandbox
+  TF_VAR_set_audit_or_disabled: Audit
+  #Adding resource id to the list instead of just name of the resource group down below
+  TF_VAR_pip_exclude_rg_id_list: '[
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-TX-RG-CLR",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-TX-RG-ROC",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-VA-RG-CLR",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-VA-RG-ROC",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-TX-RG-TEST",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-TX-RG-OOBM",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-VA-RG-OOBM",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_CVI_SUBSCRIPTION_ID }}/resourceGroups/S-TX-EITAAS-CVI",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/ci-win2019STIG",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/ci-win2022STIG"
+  ]'
+  TF_VAR_blob_exclude_rg_id_list: '[
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_EUS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-TX-EITAAS-EUS-PUBLICSA"
+  ]'
+  TF_VAR_policy_exclude_rg_id_list: '[
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/databricks-rg-adbeitaasdatateam-hucub2znvlff4",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/databricks-rg-S-VA-EITAAS-COR-CDE",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/synapseworkspace-managedrg-e02cf73b-ac94-43a7-82a0-e4d30bf1f62d",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/synapseworkspace-managedrg-f3572911-87e8-4da2-bc07-0c95de65f9fe",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_EUS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-TX-EITAAS-EUS-PACKERBUILDS",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/S-VA-EITAAS-CAS-PACKERBUILDS",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-TX-EITAAS-NET-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-VA-EITAAS-NET-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/S-TX-EITAAS-CAS-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_EUS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-TX-EITAAS-EUS-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_EUS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-VA-EITAAS-EUS-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/selvi_test_tobe_removed",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-VA-EITAAS-INFRA-PACKERBUILDS"
+  ]'
+  TF_VAR_policy_exclude_vm_backup_rg_id_list: '[
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_AVD_SUBSCRIPTION_ID }}/resourceGroups/S-VA-EITAAS-AVD-PERSONAL",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_AVD_SUBSCRIPTION_ID }}/resourceGroups/S-VA-EITAAS-AVD-POOLED"
+  ]'
+  TF_VAR_subnet_exclude_list: '[
+    "AzureBastionSubnet",
+    "AzureFirewallSubnet",
+    "AzureRouteServerSubnet",
+    "GatewaySubnet"
+  ]'
+  TF_VAR_subnet_exclude_rg_list: '[
+    "S-TX-RG-OOBM",
+    "S-VA-RG-OOBM"
+  ]'
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+    - '.github/workflows/sbx-governance.yml'
+    - 'governance/**'
+    - '!README.md'
+    - '!LICENSE'
+    - '!.github/ISSUE_TEMPLATE/**'
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2.3.4
+
+    - name: Terraform Governance
+      shell: pwsh
+      run: |
+        cd governance
+        terraform init -input=false -backend-config="${{ github.workspace }}/.tfbackend/${{ github.workflow }}"
+        # terraform destroy -auto-approve -var-file="governance.tfvars"
+        terraform plan -input=false -var-file="governance.tfvars" -out=tfplan
+        terraform apply -auto-approve tfplan
+
+    - name: Connect to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ env.AZURE_E_POLICY_SP_CREDS }}
+        environment: ${{ env.AZURE_GOV_ENV }}
+
+    - name: Initiate Policy Scan
+      shell: pwsh
+      run: |
+        az policy state trigger-scan --no-wait

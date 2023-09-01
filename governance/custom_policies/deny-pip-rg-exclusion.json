@@ -2,18 +2,40 @@
   "if": {
     "allOf": [
       {
-        "value": "[resourceGroup().name]",
-        "notIn": "[parameters('pipExcludeRgNames')]"
+        "value": "[resourceGroup().id]",
+        "notIn": "[parameters('pipExcludeRgIds')]"
       },
       {
-        "field": "type",
-        "equals": "Microsoft.Network/networkInterfaces"
-      },
-      {
-        "not": {
-          "field": "Microsoft.Network/networkInterfaces/ipconfigurations[*].publicIpAddress.id",
-          "notLike": "*"
-        }
+        "anyof": [
+          {
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.Network/networkInterfaces"
+              },
+              {
+                "not": {
+                  "field": "Microsoft.Network/networkInterfaces/ipconfigurations[*].publicIpAddress.id",
+                  "notLike": "*"
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "field": "type",
+                "equals": "Microsoft.Compute/virtualMachineScaleSets"
+              },
+              {
+                "not": {
+                  "field": "Microsoft.Compute/virtualMachineScaleSets/virtualMachineProfile.networkProfile.networkInterfaceConfigurations[*].ipConfigurations[*].publicIPAddressConfiguration.Name",
+                  "notLike": "*"
+                }
+              }
+            ]
+          }
+        ]
       }
     ]
   },

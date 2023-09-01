@@ -1,25 +1,142 @@
 name: dev-monitoring
 
 env:
-  ARM_CLIENT_ID: ${{ secrets.AZURE_D_Contoso_POLICY_SP_CLIENT_ID }}
-  ARM_CLIENT_SECRET: ${{ secrets.AZURE_D_Contoso_POLICY_SP_CLIENT_SECRET }}
-  ARM_ENVIRONMENT: "public"
-  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_D_Contoso_CAS_SUBSCRIPTION_ID }}
-  ARM_TENANT_ID: ${{ secrets.AZURE_Contoso_TENANT_ID }}
-  AZURE_E_CAS_SP_CREDS: ${{ secrets.AZURE_D_Contoso_CAS_SP }}
-  AZURE_E_POLICY_SP_CREDS: ${{ secrets.AZURE_D_Contoso_POLICY_SP }}
-  TF_VAR_location: westus2
-  TF_VAR_log_analytics_name: dvaContosocdecore
-  TF_VAR_log_analytics_rg_name: D-VA-Contoso-COR-CDE
-  TF_VAR_policy_identity_role: Contributor
-  TF_VAR_policy_scope: Contoso_Development
-  TF_VAR_storage_account_name: dvaContosocdecoremon
-  TF_VAR_storage_account_rg_name: D-VA-Contoso-COR-CDE
-  TF_VAR_subscription_id: ${{ secrets.AZURE_D_Contoso_CAS_SUBSCRIPTION_ID }}
+  ARM_CLIENT_ID: ${{ secrets.AZURE_D_EITAAS_POLICY_SP_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_D_EITAAS_POLICY_SP_CLIENT_SECRET }}
+  ARM_ENVIRONMENT: "usgovernment"
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_D_EITAAS_CAS_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_EITAAS_TENANT_ID }}
+  AZURE_E_POLICY_SP_CREDS: ${{ secrets.AZURE_D_EITAAS_POLICY_SP }}
+  AUTO_PR_GH_PAT: ${{ secrets.AUTO_PR_GH_PAT }}
+  FAILED_WORKFLOW_ISSUE_CREATION_REPO_NAME: ArmyEITaaS/Issues
+  FAILED_WORKFLOW_ISSUE_CREATION_WORKFLOW_NAME: issue-creation-workflow-failed
+
+  # EITaaS Testing Resources
+  TF_VAR_test_rg_name: "EITAAS_TESTING"
+  TF_VAR_admin_username: ${{ secrets.ADMIN_USERNAME }}
+  TF_VAR_admin_password: ${{ secrets.ADMIN_PASSWORD }}
+
+  TF_VAR_admin_subscription_id: ${{ secrets.AZURE_EITAAS_ADMIN_SUBSCRIPTION_ID}}
+  TF_VAR_data_collection_rules: '{
+    "D-Linux-Security": {
+      os_type:      "Linux",
+      log_type:     "Security",
+      data_sources: "LinuxSecuritySyslogs",
+      data_flows: [
+        {
+          destinations:    ["azuresentinelgov"],
+          destinations_rg: ["aad-diagnostics"],
+          streams:         ["Microsoft-Syslog"]
+        }
+      ]
+    },
+    "D-Windows-Security": {
+      os_type:      "Windows",
+      log_type:     "Security",
+      data_sources: "WindowsSecurityEvents",
+      data_flows: [
+        {
+          destinations:    ["azuresentinelgov"],
+          destinations_rg: ["aad-diagnostics"],
+          streams:         ["Microsoft-Event"]
+        }
+      ]
+    },
+    "D-Linux-Operational": {
+      os_type:      "Linux",
+      log_type:     "Operational",
+      data_sources: "LinuxApplicationSystemSyslogs",
+      data_flows: [
+        {
+          destinations:    ["dvaeitaascdecore"],
+          destinations_rg: ["D-VA-EITAAS-COR-CDE"],
+          streams:         ["Microsoft-Syslog"]
+        }
+      ]
+    },
+    "D-Windows-Operational": {
+      os_type:      "Windows",
+      log_type:     "Operational",
+      data_sources: "WindowsApplicationSystemEvents",
+      data_flows: [
+        {
+          destinations:    ["dvaeitaascdecore"],
+          destinations_rg: ["D-VA-EITAAS-COR-CDE"],
+          streams:         ["Microsoft-Event"]
+        }
+      ]
+    }
+  }'
+  TF_VAR_dcr_info: '{
+    windows_security_dcr_name:    "D-Windows-Security",
+    linux_security_dcr_name:      "D-Linux-Security",
+    windows_operational_dcr_name: "D-Windows-Operational",
+    linux_operational_dcr_name:   "D-Linux-Operational"
+  }'
+  TF_VAR_diagnostics_setting_name: eitaas-monitoring-policy
+  TF_VAR_policy_identity_name: D-EITaaS-Monitoring
+  TF_VAR_policy_identity_rg: D-VA-EITAAS-POLICY
+  TF_VAR_flow_logs_retention_policy_days: 14
+  TF_VAR_flow_logs_traffic_analytics_interval_min: 10
+  TF_VAR_location: usgovvirginia
+  TF_VAR_log_analytics_name: dvaeitaascdecore
+  TF_VAR_log_analytics_rg_name: D-VA-EITAAS-COR-CDE
+  TF_VAR_managed_identity_roles: '[
+    "Managed Identity Contributor",
+    "Managed Identity Operator",
+    "D-EITAAS-CAS - Access Administrator"
+  ]'
+  TF_VAR_policy_scope: EITaaS_Development
+  TF_VAR_storage_account_name: dvaeitaascdecoremon
+  TF_VAR_storage_account_rg_name: D-VA-EITAAS-COR-CDE
+  TF_VAR_storage_account_tx_rg_name: D-TX-EITAAS-CAS-AUTOMATION
+  TF_VAR_storage_account_tx_name: dtxeitaascdecoremon
+  TF_VAR_policy_exclude_rg_ids_list: '[
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/databricks-rg-D-VA-EITAAS-COR-CDE",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/synapseworkspace-managedrg-2f41411a-cff5-474c-bc18-98a6cd31ae4b",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/synapseworkspace-managedrg-37c43126-298d-4576-9914-9a4d791c2b54",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/synapseworkspace-managedrg-6fa6cca4-427a-4320-b8e4-5790590bd12c",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_EUS_SP_SUBSCRIPTION_ID }}/resourceGroups/D-TX-EITAAS-EUS-PACKERBUILDS",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/D-VA-EITAAS-CAS-PACKERBUILDS",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_EUS_SP_SUBSCRIPTION_ID }}/resourceGroups/D-VA-EITAAS-EUS-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_EUS_SP_SUBSCRIPTION_ID }}/resourceGroups/D-TX-EITAAS-EUS-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/D-TX-EITAAS-CAS-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/D-TX-RG-CLR",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/D-TX-RG-DDI",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/D-TX-RG-DNS",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/D-TX-RG-ROC",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/D-VA-RG-CLR",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/D-VA-RG-ROC",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/D-VA-EITAAS-INFRA-PACKERBUILDS"
+  ]'
+  imagegallery_rgs: '{
+      "D-EITAAS-CAS": [
+          "D-VA-EITAAS-CAS-IMAGEGALLERY",
+          "D-TX-EITAAS-CAS-IMAGEGALLERY"
+      ],
+      "D-EITAAS-EUS": [
+          "D-VA-EITAAS-EUS-IMAGEGALLERY",
+          "D-TX-EITAAS-EUS-IMAGEGALLERY"
+      ],
+      "D-EITaaS-Infra": [
+          "D-TX-RG-BaseImages",
+          "D-VA-RG-BaseImages"
+      ]
+  }'
+  # NaaS Compute Gallery is only in their SBX Subscription. DEV NaaS VMs that is created from SBX Compute Gallery image needs to get Monitoring extensions via Policy
+  compute_imagegallery_rgs: '{
+    "S-EITAAS-INFRA": [
+      "S-TX-RG-IMG"
+    ],
+    "D-EITAAS-INFRA": [
+      "D-VA-EITAAS-INFRA-SHAREDIMAGEGALLERY"
+    ]
+  }'
 
 on:
-  pull_request:
-    branches: [ notrightnow ]
+  workflow_dispatch:
+  push:
+    branches: [main]
     paths:
     - '.github/workflows/dev-monitoring.yml'
     - 'monitoring/**'
@@ -31,98 +148,406 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2.3.4
-
-    - name: Terraform Monitoring
-      run: |
-        cd monitoring
-        terraform init -input=false -backend-config=${{ github.workspace }}/.tfbackend/${{ github.workflow }}
-        #terraform destroy -auto-approve -var-file="monitoring.tfvars"
-        terraform plan -input=false -var-file="monitoring.tfvars"
-        terraform apply -auto-approve -var-file="monitoring.tfvars"
-
-    - name: Connect to Azure
-      uses: azure/login@v1
-      with:
-        creds: ${{ env.AZURE_E_CAS_SP_CREDS }}
-        environment: 'AzureCloud'
-
-    - name: Initiate Scan
-      shell: pwsh
-      run: |
-        az policy state trigger-scan
-
-  policytesting:
-    needs: [terraform]
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v2.3.4
+    - uses: actions/checkout@v3.1.0
 
     - name: Connect to Azure
       uses: azure/login@v1
       with:
         creds: ${{ env.AZURE_E_POLICY_SP_CREDS }}
-        environment: 'AzureCloud'
+        environment: 'AzureUSGovernment'
         enable-AzPSSession: true
 
-    - name: Start Tests
-      continue-on-error: false
+    - name: Get all custom image ids from image gallery
+      id: get_image_ids
+      uses: azure/powershell@v1
+      with:
+        azPSVersion: "latest"
+        failOnStandardError: "true"
+        inlineScript: | # Any module beginning with 'Az.' doesn't need to be manually installed when using this 'azure/powershell' GitHub Action.
+
+          $imagegallery_rgs = $env:imagegallery_rgs | ConvertFrom-Json -AsHashTable
+
+          $imageList = @()
+          foreach ($sub in $imagegallery_rgs.GetEnumerator())
+          {
+              Write-Information -Message "INFO: Connecting to Subscription $($sub.Key)" -InformationAction Continue
+              $null = Select-AzSubscription -SubscriptionName $sub.Key
+              foreach ($rg in $sub.Value)
+              {
+                  Write-Information -Message "INFO: Retrieving Images from $rg" -InformationAction Continue
+                  $imageList += Get-AzImage -ResourceGroupName $rg
+              }
+          }
+
+          $imageListLinux = @(($imageList.Where({ $_.StorageProfile.OsDisk.OsType -eq 'Linux' })).Id)
+          $imageListWindows = @(($imageList.Where({ $_.StorageProfile.OsDisk.OsType -eq 'Windows' })).Id)
+
+           ## IMAGE VERSIONS FROM COMPUTE GALLERIES ##
+          $compute_imagegallery_rgs = $env:compute_imagegallery_rgs | ConvertFrom-Json -AsHashTable
+          foreach ($sub in $compute_imagegallery_rgs.GetEnumerator())
+          {
+              Write-Information -Message "INFO: Connecting to Compute Gallery Subscription $($sub.Key)" -InformationAction Continue
+              $null = Select-AzSubscription -SubscriptionName $sub.Key
+              foreach ($rg in $sub.Value)
+              {
+                Write-Information -Message "INFO: Retrieving Compute Gallery Resource Group $($rg)" -InformationAction Continue
+                $computeGallery = Get-AzGallery -ResourceGroupName $rg
+                Write-Information -Message "INFO: Retrieving image definitions from Compute Gallery in $($rg)" -InformationAction Continue
+                $imageDefinitions = Get-AzGalleryImageDefinition -ResourceGroupName $computegallery.ResourceGroupName -GalleryName $computegallery.Name
+
+                $windowsDefinitions = $imageDefinitions.Where({ $_.OsType -eq 'Windows' })
+                $linuxDefinitions = $imageDefinitions.Where({ $_.OsType -eq 'Linux' })
+                Write-Information -Message "INFO: Retrieving Windows image versions" -InformationAction Continue
+                foreach ($winDefinition in $windowsDefinitions)
+                {
+                    $imageListWindows += (Get-AzGalleryImageVersion -ResourceGroupName $computegallery.ResourceGroupName -GalleryName $computegallery.Name -GalleryImageDefinitionName $winDefinition.Name).Id
+                }
+
+                Write-Information -Message "INFO: Retrieving Linux image versions" -InformationAction Continue
+                foreach ($linDefinition in $LinuxDefinitions)
+                {
+                    $imageListLinux += (Get-AzGalleryImageVersion -ResourceGroupName $computegallery.ResourceGroupName -GalleryName $computegallery.Name -GalleryImageDefinitionName $linDefinition.Name).Id
+                }
+              }
+          }
+
+          Write-Information -Message "INFO: Retrieving Linux image versions" -InformationAction Continue
+          foreach ($linDefinition in $LinuxDefinitions)
+          {
+              $imageListLinux += (Get-AzGalleryImageVersion -ResourceGroupName $computegallery.ResourceGroupName -GalleryName $computegallery.Name -GalleryImageDefinitionName $linDefinition.Name).Id
+          }
+
+          Write-Information -Message "INFO: Output Windows image Ids:" -InformationAction Continue
+          $imageListWindows
+
+          Write-Information -Message "INFO: Output Linux image Ids:" -InformationAction Continue
+          $imageListLinux
+
+          Write-Information -Message "INFO: Converting Windows image Ids to string list" -InformationAction Continue
+          $strImageListWindows = $imageListWindows -Join ','
+
+          Write-Information -Message "INFO: Converting Linux image Ids to string list" -InformationAction Continue
+          $strImageListLinux = $imageListLinux -Join ','
+
+          echo "WINDOWS_IMAGE_IDS=$strImageListWindows" >> $env:GITHUB_OUTPUT
+          echo "LINUX_IMAGE_IDS=$strImageListLinux" >> $env:GITHUB_OUTPUT
+
+    - name: Terraform Monitoring
       shell: pwsh
       run: |
-        #az policy state trigger-scan
-        $null = Install-Module -Name Az -Scope CurrentUser -Force
-        Import-Module Pester, Az.Resources, Az.Monitor, Az.PolicyInsights
+        Write-Host 'Converting image list to JSON object' #NOTE: can only pass strings between GH jobs/steps so have to do the JSON conversion here
+        $env:TF_VAR_custom_windows_image_ids_list = ConvertTo-Json -InputObject $('${{ steps.get_image_ids.outputs.WINDOWS_IMAGE_IDS }}' -split ',')
+        $env:TF_VAR_custom_linux_image_ids_list = ConvertTo-Json -InputObject $('${{ steps.get_image_ids.outputs.LINUX_IMAGE_IDS }}' -split ',')
 
+        cd monitoring
+        terraform init -input=false -backend-config="${{ github.workspace }}/.tfbackend/${{ github.workflow }}"
+        terraform plan -input=false -var-file="monitoring.tfvars" -out=tfplan
+        terraform apply -auto-approve tfplan
+
+  tests:
+    needs: [terraform]
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3.1.0
+
+    - name: Connect to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ env.AZURE_E_POLICY_SP_CREDS }}
+        environment: 'AzureUSGovernment'
+        enable-AzPSSession: true
+
+    - name: Test Policy
+      id: test_policy
+      shell: pwsh
+      run: |
+        Write-Host 'Installing PS module Az'
+        $modules = @(
+          "Az.PolicyInsights"
+          "Az.Resources"
+          "Az.Sql"
+          "Az.Monitor"
+          "Az.Network"
+          "Az.OperationalInsights"
+        )
+        Install-Module -Name $modules -Scope CurrentUser -Force
+
+        $testScope = "/subscriptions/${{ env.ARM_SUBSCRIPTION_ID }}/resourceGroups/${{ env.TF_VAR_test_rg_name }}"
+
+        Import-Module Pester
+
+        Write-Host 'Retrieving Terraform outputs'
         cd monitoring/tests/terraform
         terraform init -input=false -backend-config="${{ github.workspace }}/.tfbackend/${{ github.workflow }}-tests"
-        terraform plan -input=false -out=tfplan
-        terraform apply -auto-approve tfplan
         $tfOutputs = terraform output -json | ConvertFrom-Json -AsHashtable
-        $tfOutputs
+        $resourceIdList = $tfoutputs.Values.value
+        $allResourceIdList = @()
 
-        ## Re-enable diagnostic setting incase remediation did not completed in time
-        $ResourceGroup = Get-AzResourceGroup -Name "Contoso_TESTING"
-        $nonCompliantPolicies = Get-AzPolicyState -ResourceGroupName $ResourceGroup.ResourceGroupName | Where-Object { $_.ComplianceState -eq "NonCompliant" -and $_.PolicyDefinitionAction -eq "deployIfNotExists" }
-        foreach ($policy in $nonCompliantPolicies)
+        foreach ($resource in $resourceIdList)
         {
-          $remediationName = "testrem." + $policy.PolicyDefinitionName
-          Start-AzPolicyRemediation -Scope $ResourceGroup.ResourceId -Name $remediationName -PolicyAssignmentId $policy.PolicyAssignmentId -PolicyDefinitionReferenceId $policy.PolicyDefinitionReferenceId -ErrorAction SilentlyContinue
+          foreach ($resVal in $resource.GetEnumerator())
+          {
+            $allResourceIdList += $resVal.Value
+          }
         }
 
-        Start-Sleep -s 300
+        Write-Host "Save all resources ids as OUTPUT variable"
+        echo "TEST_RESOURCE_IDS=$allResourceIdList" >> $env:GITHUB_OUTPUT
 
-        $resourceIdList = @()
-        $tfOutputs.Keys.ForEach({ $resourceIdList += @{ ResourceId = $tfOutputs.$_.value } })
-        $resourceIdList
+        Write-Host 'Start Resource List'
+        $allResourceIdList
+        Write-Host 'End Resource List'
 
-        $paramData = @{ ResourceIdList = $resourceIdList }
+        Write-Host 'Remove sql server auditing'
+        Get-AzSqlServer -ResourceGroupName '${{ env.TF_VAR_test_rg_name }}' -ServerName 'eitaastesttxsqlserver' | Remove-AzSqlServerAudit
+        Get-AzSqlServer -ResourceGroupName '${{ env.TF_VAR_test_rg_name }}' -ServerName 'eitaastestvasqlserver' | Remove-AzSqlServerAudit
+
+        Write-Host "Getting info of Network Watcher Flow Logs"
+        $flowLogs = @()
+        $networkWatchers = Get-AzNetworkWatcher -WarningAction SilentlyContinue
+        foreach ($networkWatcher in $networkWatchers)
+        {
+          $flowLogs += Get-AzNetworkwatcherFlowLog -NetworkWatcher $networkWatcher -WarningAction SilentlyContinue
+        }
+
+        foreach ($resourceId in $allResourceIdList)
+        {
+          $resource = Get-AzResource -ResourceId $resourceId -ErrorAction SilentlyContinue
+          if ($null -ne $resource)
+          {
+            Write-Host "Removing Diag Settings from $resourceId"
+            Remove-AzDiagnosticSetting -Name $env:TF_VAR_diagnostics_setting_name -ResourceId $resourceId -WarningAction SilentlyContinue
+            if ($resource.resourceType -eq 'Microsoft.Storage/storageAccounts')
+            {
+              Write-Host "Removing Diag Settings from $resourceId"
+              Remove-AzDiagnosticSetting -Name $env:TF_VAR_diagnostics_setting_name -ResourceId $resourceId -WarningAction SilentlyContinue
+              Remove-AzDiagnosticSetting -Name $env:TF_VAR_diagnostics_setting_name -ResourceId "$resourceId/tableServices/default" -WarningAction SilentlyContinue
+              Remove-AzDiagnosticSetting -Name $env:TF_VAR_diagnostics_setting_name -ResourceId "$resourceId/fileServices/default" -WarningAction SilentlyContinue
+              Remove-AzDiagnosticSetting -Name $env:TF_VAR_diagnostics_setting_name -ResourceId "$resourceId/queueServices/default" -WarningAction SilentlyContinue
+              Remove-AzDiagnosticSetting -Name $env:TF_VAR_diagnostics_setting_name -ResourceId "$resourceId/blobServices/default" -WarningAction SilentlyContinue
+            }
+            elseif ($resource.resourceType -eq 'Microsoft.Network/networkSecurityGroups')
+            {
+              Write-Host "Removing Flow Logs from $resourceId"
+              $flowLogs | where-object { $_.TargetResourceId -eq $resourceId } | Remove-AzNetworkwatcherFlowLog -WarningAction SilentlyContinue
+            }
+          }
+          else
+          {
+            write-warning "Resource is missing: $resourceId"
+          }
+        }
+
+        Write-Host 'Removing existing remediations on target resource group'
+        Get-AzPolicyRemediation -Scope $testScope | Remove-AzPolicyRemediation
+
+        # Deleting resources with agents
+        terraform destroy `
+          -target azurerm_mssql_elasticpool.elastic_pool `
+          -target azurerm_windows_virtual_machine.win_vm `
+          -target azurerm_windows_virtual_machine.custom_win_vm `
+          -target azurerm_linux_virtual_machine.linux_vm `
+          -target azurerm_linux_virtual_machine.custom_ubuntu_vm `
+          -target azurerm_linux_virtual_machine.custom_rhel_vm `
+          -auto-approve -var-file="terraform.tfvars"
+
+    - name: Terraform Plan Apply
+      shell: pwsh
+      run: |
+        cd monitoring/tests/terraform
+        terraform plan -input=false -var-file="terraform.tfvars" -out=tfplan
+        terraform apply -auto-approve tfplan
+
+    - name: Apply Test resources remediation
+      uses: azure/powershell@v1
+      with:
+        azPSVersion: "latest"
+        failOnStandardError: "true"
+        inlineScript: | # Any module beginning with 'Az.' doesn't need to be manually installed when using this 'azure/powershell' GitHub Action.
+          $testScope = "/subscriptions/${{ env.ARM_SUBSCRIPTION_ID }}/resourceGroups/${{ env.TF_VAR_test_rg_name }}"
+
+          Write-Host 'Sleeping for 7 minutes while newly deployed resources settle.'
+          sleep 420
+
+          Write-Host 'Run policy scan on newly created resources'
+          Start-AzPolicyComplianceScan -ResourceGroupName '${{ env.TF_VAR_test_rg_name }}'
+
+          Write-Host 'Remediating required policies'
+          $policyFilter = "PolicySetDefinitionName eq 'EITaaS_Monitoring' and ComplianceState eq 'NonCompliant' and PolicyDefinitionAction eq 'deployIfNotExists'"
+          $nonCompliantPolicies = Get-AzPolicyState -ResourceGroupName '${{ env.TF_VAR_test_rg_name }}' -Filter $policyFilter
+          $uniqueNonCompliantPolicies = $nonCompliantPolicies | Sort-Object -Unique -Property 'PolicyDefinitionName'
+          $remediations = @()
+          foreach ($policy in $uniqueNonCompliantPolicies)
+          {
+            Write-Host "Creating remediation for $($policy.PolicyDefinitionName)"
+            $params = @{
+              Scope                       = $testScope
+              Name                        = "testrem.$($policy.PolicyDefinitionName)"
+              PolicyAssignmentId          = $policy.PolicyAssignmentId
+              PolicyDefinitionReferenceId = $policy.PolicyDefinitionReferenceId
+            }
+            $remediations += Start-AzPolicyRemediation @params
+          }
+
+          Write-Host 'Waiting for remediations to complete'
+          $failedRemediations = @()
+          for ($i = 1 ; $i -lt 11; $i++)
+          {
+            $remediationsInProgress = $false
+            foreach ($remediation in $remediations)
+            {
+              Write-Host "'$($remediation.Name)' task '$($remediation.ProvisioningState)'"
+              if ($remediation.ProvisioningState -eq 'Failed')
+              {
+                $failedRemediations += $remediation
+                Write-Host "remediation $($remediation.Name) failed - restarting)"
+                $params = @{
+                  Scope                       = $testScope
+                  Name                        = $remediation.Name
+                  PolicyAssignmentId          = $remediation.PolicyAssignmentId
+                  PolicyDefinitionReferenceId = $remediation.PolicyDefinitionReferenceId
+                }
+                Start-AzPolicyRemediation @params
+              }
+              elseif ($remediation.ProvisioningState -ne 'Succeeded')
+              {
+                $remediationsInProgress = $true
+              }
+            }
+            if (! $remediationsInProgress)
+            {
+              break
+            }
+            Write-Host "Waiting 60 seconds for remediations to finish: $i of 10"
+            sleep 60
+            $remediations = Get-AzPolicyRemediation -Scope $testScope
+          }
+
+          if ($failedRemediations)
+          {
+            Write-Host 'Attempting failed remediations a second time'
+            $remediations = @()
+            foreach ($remediation in $failedRemediations)
+            {
+              $params = @{
+                Scope                       = $testScope
+                Name                        = $remediation.Name
+                PolicyAssignmentId          = $remediation.PolicyAssignmentId
+                PolicyDefinitionReferenceId = $remediation.PolicyDefinitionReferenceId
+              }
+              $remediations += Start-AzPolicyRemediation @params
+            }
+
+            Write-Host 'Waiting for failed remediations to complete'
+            $remediationError = $false
+            for ($i = 1 ; $i -lt 11; $i++)
+            {
+              $remediationsInProgress = $false
+              foreach ($remediation in $remediations)
+              {
+                Write-Host "'$($remediation.Name)' task '$($remediation.ProvisioningState)'"
+                if ($remediation.ProvisioningState -eq 'Failed')
+                {
+                  Write-Host "$($remediation.Name) failed."
+                  $remediationError = $true
+                }
+                elseif ($remediation.ProvisioningState -ne 'Succeeded')
+                {
+                  $remediationsInProgress = $true
+                }
+              }
+              if (! $remediationsInProgress)
+              {
+                break
+              }
+              Write-Host "Waiting 60 seconds for remediations to finish: $i of 10"
+              sleep 60
+              $remediations = Get-AzPolicyRemediation -Scope $testScope
+            }
+
+            if ($remediationError)
+            {
+              throw "Remediations have failed."
+            }
+          }
+
+          Write-Host 'Sleeping for 7 minutes while newly applied remediations settle.'
+          sleep 420
+
+          Write-Host 'Run policy scan again with remediations in place'
+          Start-AzPolicyComplianceScan -ResourceGroupName ${{ env.TF_VAR_test_rg_name }}
+
+    - name: Pester Test
+      shell: pwsh
+      run: |
+        $resourceIds = "${{ steps.test_policy.outputs.TEST_RESOURCE_IDS }}"
+        $resIds = $resourceIds.split(" ");
+
+        $paramData = @{ ResourceIdList = $resIds }
         $container = New-PesterContainer -Path "${{ GITHUB.WORKSPACE }}\monitoring" -Data $paramData
         Invoke-Pester -Container $container -Output Detailed
 
-    - name: Cleanup Tests
-      continue-on-error: false
-      shell: pwsh
-      run: |
-        $null = Install-Module -Name Az -Scope CurrentUser -Force
-        Import-Module Pester, Az.Resources, Az.Monitor, Az.PolicyInsights
+  remediation:
+    needs: [tests]
+    runs-on: ubuntu-latest
 
-        cd monitoring/tests/terraform
-        terraform init -input=false -backend-config="${{ github.workspace }}/.tfbackend/${{ github.workflow }}-tests"
-        terraform destroy -target azurerm_sql_elasticpool.elastic_pool -target azurerm_windows_virtual_machine.win_vm -target azurerm_linux_virtual_machine.linux_vm -auto-approve
+    steps:
+    - uses: actions/checkout@v3.1.0
 
-        $resources = (Get-AzResource -ResourceGroupName "Contoso_TESTING").ResourceId
-        foreach ($resource in $resources)
-        {
-          Get-AzDiagnosticSetting -ResourceId $resource | Remove-AzDiagnosticSetting -ResourceId $resource
-        }
-
-    - name: Create Issue On Failure
-      if: ${{ failure() }}
-      uses: ArmyContoso/create-issue-action@v1.1
+    - name: Connect to Azure
+      uses: azure/login@v1
       with:
-        title: Workflow failed for commit ${{ github.event.commits[0].message }}
-        token: ${{secrets.GITHUB_TOKEN}}
-        assignees: ${{github.actor}}
-        labels: workflow-failure
-        body: Error details - https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
+        creds: ${{ env.AZURE_E_POLICY_SP_CREDS }}
+        environment: 'AzureUSGovernment'
+        enable-AzPSSession: true
+
+    - name: Initiate Scan
+      uses: azure/powershell@v1
+      with:
+        azPSVersion: "latest"
+        failOnStandardError: "true"
+        inlineScript: | # Any module beginning with 'Az.' doesn't need to be manually installed when using this 'azure/powershell' GitHub Action.
+          $job = Start-AzPolicyComplianceScan -AsJob
+          $job | Wait-Job
+
+    - name: Policy Remediation
+      uses: azure/powershell@v1
+      with:
+        azPSVersion: "latest"
+        failOnStandardError: "true"
+        inlineScript: | # Any module beginning with 'Az.' doesn't need to be manually installed when using this 'azure/powershell' GitHub Action.
+          Write-Host 'Remediating required policies'
+          $policyFilter = "PolicySetDefinitionName eq 'EITaaS_Monitoring' and ComplianceState eq 'NonCompliant' and PolicyDefinitionAction eq 'deployIfNotExists'"
+          $nonCompliantPolicies = Get-AzPolicyState -ManagementGroupName  $env:TF_VAR_policy_scope -Filter $policyFilter
+          $uniqueNonCompliantPolicies = $nonCompliantPolicies | Sort-Object -Unique -Property 'PolicyDefinitionName'
+
+          $remediations = @()
+          foreach ($policy in $uniqueNonCompliantPolicies)
+          {
+            Write-Host "Creating remediation for $($policy.PolicyDefinitionName)"
+            $params = @{
+              ManagementGroupName         = $env:TF_VAR_policy_scope
+              Name                        = "remediation.$($policy.PolicyDefinitionName)"
+              PolicyAssignmentId          = $policy.PolicyAssignmentId
+              PolicyDefinitionReferenceId = $policy.PolicyDefinitionReferenceId
+            }
+            $remediations += Start-AzPolicyRemediation @params -ErrorAction SilentlyContinue
+          }
+
+          Write-Host "$remediations"
+
+  create-issue-on-failure:
+    if: ${{ github.event_name == 'push' && github.ref_name == 'main' && failure() }}
+    needs: [terraform, tests, remediation] # Add all workflow jobs to needs to alert on failure.
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Create GitHub Issue for Failed Workflow
+      uses: ArmyEITaaS/workflow-dispatch@v1
+      with:
+        token: ${{ env.AUTO_PR_GH_PAT }}
+        repo: ${{ env.FAILED_WORKFLOW_ISSUE_CREATION_REPO_NAME }}
+        ref: main
+        workflow: ${{ env.FAILED_WORKFLOW_ISSUE_CREATION_WORKFLOW_NAME }}
+        inputs: '{"FAILED_WORKFLOW_NAME":"${{ github.workflow }}","FAILED_WORKFLOW_REPO_NAME":"${{ github.repository }}","FAILED_WORKFLOW_RUN_ID":"${{ github.run_id }}"}'

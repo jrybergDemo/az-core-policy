@@ -1,0 +1,8 @@
+{
+  "vmBackupExcludeRgIds": {
+    "type": "Array",
+    "metadata": {
+      "displayName": "List of resource group IDs to exclude from VM backup policy."
+    }
+  }
+}

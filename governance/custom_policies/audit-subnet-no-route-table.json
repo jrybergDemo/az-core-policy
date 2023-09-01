@@ -1,0 +1,31 @@
+{
+  "if": {
+    "anyOf" : [
+      {
+        "allOf": [
+          {
+            "value": "[resourceGroup().name]",
+            "notIn": "[parameters('subnetExcludeRgNames')]"
+          },
+          {
+            "field": "type",
+            "equals": "Microsoft.Network/virtualNetworks/subnets"
+          },
+          {
+            "field": "Microsoft.Network/virtualNetworks/subnets/routeTable.id",
+            "exists": false
+          },
+          {
+            "not": {
+              "field": "name",
+              "In": "[parameters('subnetExcludeNames')]"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "then": {
+    "effect": "audit"
+  }
+}
