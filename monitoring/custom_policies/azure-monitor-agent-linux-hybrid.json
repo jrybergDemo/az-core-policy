@@ -1,0 +1,88 @@
+{
+    "if": {
+        "anyOf": [
+            {
+                "allOf": [
+                    {
+                        "field": "type",
+                        "equals": "Microsoft.HybridCompute/machines"
+                    },
+                    {
+                        "field": "Microsoft.HybridCompute/machines/osName",
+                        "equals": "linux"
+                    }
+                ]
+            }
+        ]
+    },
+    "then": {
+        "effect": "deployIfNotExists",
+        "details": {
+            "type": "Microsoft.HybridCompute/machines/extensions",
+            "roleDefinitionIds": [
+                "/providers/microsoft.authorization/roleDefinitions/cd570a14-e51a-42ad-bac8-bafd67325302"
+            ],
+            "existenceCondition": {
+                "allOf": [
+                    {
+                        "field": "Microsoft.HybridCompute/machines/extensions/type",
+                        "equals": "AzureMonitorLinuxAgent"
+                    },
+                    {
+                        "field": "Microsoft.HybridCompute/machines/extensions/publisher",
+                        "equals": "Microsoft.Azure.Monitor"
+                    },
+                    {
+                        "field": "Microsoft.HybridCompute/machines/extensions/provisioningState",
+                        "equals": "Succeeded"
+                    }
+                ]
+            },
+            "deployment": {
+                "properties": {
+                    "mode": "incremental",
+                    "template": {
+                        "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                        "contentVersion": "1.0.0.0",
+                        "parameters": {
+                            "vmName": {
+                                "type": "string"
+                            },
+                            "location": {
+                                "type": "string"
+                            }
+                        },
+                        "variables": {
+                            "extensionName": "AzureMonitorLinuxAgent",
+                            "extensionPublisher": "Microsoft.Azure.Monitor",
+                            "extensionType": "AzureMonitorLinuxAgent",
+                            "extensionTypeHandlerVersion": "1.19.3"
+                        },
+                        "resources": [
+                            {
+                                "name": "[concat(parameters('vmName'), '/', variables('extensionName'))]",
+                                "type": "Microsoft.HybridCompute/machines/extensions",
+                                "location": "[parameters('location')]",
+                                "apiVersion": "2022-03-10",
+                                "properties": {
+                                    "publisher": "[variables('extensionPublisher')]",
+                                    "type": "[variables('extensionType')]",
+                                    "typeHandlerVersion": "[variables('extensionTypeHandlerVersion')]",
+                                    "autoUpgradeMinorVersion": true
+                                }
+                            }
+                        ]
+                    },
+                    "parameters": {
+                        "vmName": {
+                            "value": "[field('name')]"
+                        },
+                        "location": {
+                            "value": "[field('location')]"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

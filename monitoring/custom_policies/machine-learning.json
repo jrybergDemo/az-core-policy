@@ -1,7 +1,7 @@
 {
-    "if":  {
+    "if": {
       "field": "type",
-      "equals": "Microsoft.Automation/automationAccounts"
+      "equals": "Microsoft.MachineLearningServices/workspaces"
     },
     "then": {
       "effect": "deployIfNotExists",
@@ -53,54 +53,65 @@
                 "storageAccountTx": {
                   "type": "string"
                 },
+                "useDedicatedTable": {
+                  "type": "string"
+                },
                 "location": {
                   "type": "string"
                 }
               },
-              "variables": {},
+              "variables": {
+                "logAnalyticsDestinationType": "[if(equals(toLower(parameters('useDedicatedTable')),'true'), 'Dedicated', json('null'))]"
+              },
               "resources": [
                 {
-                  "type": "Microsoft.Automation/automationAccounts/providers/diagnosticSettings",
-                  "apiVersion": "2017-05-01-preview",
+                  "type": "Microsoft.MachineLearningServices/workspaces/providers/diagnosticSettings",
+                  "apiVersion": "2021-05-01-preview",
                   "name": "[concat(parameters('resourceName'), '/', 'Microsoft.Insights/', parameters('diagnosticsSettingName'))]",
                   "location": "[parameters('location')]",
                   "dependsOn": [],
                   "properties": {
                     "workspaceId": "[parameters('logAnalytics')]",
+                    "logAnalyticsDestinationType": "[variables('logAnalyticsDestinationType')]",
                     "storageAccountId": "[if(equals(parameters('location'), 'usgovvirginia'), parameters('storageAccount'), parameters('storageAccountTx'))]",
                     "metrics": [
                       {
                         "category": "AllMetrics",
-                        "timeGrain": null,
                         "enabled": true,
                         "retentionPolicy": {
-                          "enabled": false,
-                          "days": 0
-                        }
+                          "days": 0,
+                          "enabled": false
+                        },
+                        "timeGrain": null
                       }
                     ],
                     "logs": [
                       {
-                        "category": "JobLogs",
+                        "category": "AmlComputeClusterEvent",
                         "enabled": true
                       },
                       {
-                        "category": "JobStreams",
+                        "category": "AmlComputeJobEvent",
                         "enabled": true
                       },
                       {
-                        "category": "DscNodeStatus",
+                        "category": "AmlComputeCpuGpuUtilization",
                         "enabled": true
                       },
                       {
-                        "category": "AuditEvent",
+                        "category": "AmlRunStatusChangedEvent",
                         "enabled": true
                       }
                     ]
                   }
                 }
               ],
-              "outputs": {}
+              "outputs": {
+                "logAnalyticsDestinationType": {
+                  "type": "string",
+                  "value": "[variables('logAnalyticsDestinationType')]"
+                }
+              }
             },
             "parameters": {
               "diagnosticsSettingName": {
@@ -114,6 +125,9 @@
               },
               "storageAccountTx": {
                 "value": "[parameters('storageAccountTx')]"
+              },
+              "useDedicatedTable": {
+                "value": "true"
               },
               "location": {
                 "value": "[field('location')]"

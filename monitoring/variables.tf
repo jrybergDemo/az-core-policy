@@ -9,7 +9,7 @@ variable "policy_scope" {
 }
 
 variable "policy_list" {
-  type        = map
+  type        = map(any)
   description = "The list of policies to be added to the policy set."
 }
 
@@ -21,6 +21,31 @@ variable "policy_type" {
 variable "policy_description" {
   type        = string
   description = "The description to provide for the policy assignment."
+}
+
+variable "policy_identity_name" {
+  type        = string
+  description = "The user assigned identity to be assigned to the policy assignmet."
+}
+
+variable "policy_identity_rg" {
+  type        = string
+  description = "The resource group where the user assigned identity will be stored."
+}
+
+variable "policy_exclude_rg_ids_list" {
+  type        = set(string)
+  description = "The Resources Groups that will be excluded for policy assignment with Terraform."
+}
+
+variable "custom_windows_image_ids_list" {
+  type        = string
+  description = "The custom windows image resource ids for the Log Analytics & Dependency policies to be applied."
+}
+
+variable "custom_linux_image_ids_list" {
+  type        = string
+  description = "The custom linux image resource ids for the Log Analytics & Dependency policies to be applied."
 }
 
 variable "policy_set_parameters" {
@@ -35,12 +60,12 @@ variable "policy_mode" {
 
 variable "location" {
   type        = string
-  description = "The location to deploy the resources to. Valid values: usgovtexas, westus2.  Default westus2"
+  description = "The location to deploy the resources to. Valid values: usgovtexas, usgovvirginia."
 }
 
-variable "subscription_id" {
+variable "diagnostics_setting_name" {
   type        = string
-  description = "The subscription scope"
+  description = "The name of the diagnostic setting to apply to each resource."
 }
 
 variable "log_analytics_rg_name" {
@@ -53,31 +78,6 @@ variable "log_analytics_name" {
   description = "The log analytics Workspace name"
 }
 
-variable "policy_identity_role" {
-  type        = string
-  description = "The role for System Assigned Identity for Contoso_Monitoring Initiative"
-}
-
-variable "sa_policy_def_list" {
-  type        = map
-  description = "The list of custom monitoring policies with Storage Account to be added to the policy set."
-}
-
-variable "la_policy_def_list" {
-  type        = map
-  description = "The list of custom monitoring policies with Log Analytics Workspaces to be added to the policy set."
-}
-
-variable "sa_policy_def_parameters" {
-  type        = map
-  description = "The map of parameters required for custom Storage Account monitoring policies to be added to the policy set."
-}
-
-variable "la_policy_def_parameters" {
-  type        = map
-  description = "The map of parameters required for custom Log Analytics Workspace monitoring policies to be added to the policy set."
-}
-
 variable "storage_account_rg_name" {
   type        = string
   description = "The storage account resource group name"
@@ -86,4 +86,61 @@ variable "storage_account_rg_name" {
 variable "storage_account_name" {
   type        = string
   description = "The storage account name"
+}
+
+variable "storage_account_tx_rg_name" {
+  type        = string
+  description = "The storage account resource group name in TX region"
+}
+
+variable "storage_account_tx_name" {
+  type        = string
+  description = "The storage account name in TX region"
+}
+
+variable "flow_logs_retention_policy_days" {
+  type        = number
+  description = "The flow log retention storage in days. Use 0 for 'forever'."
+}
+
+variable "flow_logs_traffic_analytics_interval_min" {
+  type        = number
+  description = "The flow log workspace analytics interval in minutes. Valid values are 10 and 60."
+}
+
+variable "managed_identity_roles" {
+  type        = set(string)
+  description = "Roles required to create and configure a user managed identity."
+}
+
+variable "dcr_info" {
+  description = "Data Collection Rule (DCR) Info."
+  type        = map(string)
+}
+
+variable "vminsights_dcr_law" {
+  description = "LAW for VMInsights DCR."
+  type        = map(string)
+}
+
+###################
+## Azure Monitor ##
+###################
+variable "data_collection_rules" {
+  description = "Map of Azure monitor data collection rules."
+  type = map(object({
+    os_type             = string
+    data_sources_syslog = optional(map(string))
+    log_type            = string
+    data_flows = list(object({
+      destinations    = list(string)
+      destinations_rg = list(string)
+      streams         = list(string)
+    }))
+  }))
+}
+
+variable "admin_subscription_id" {
+  description = "Subscription ID where Sentinel Log Analytic Workspace exist for DCR"
+  type        = string
 }

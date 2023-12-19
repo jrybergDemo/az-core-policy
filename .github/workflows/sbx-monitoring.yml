@@ -1,0 +1,278 @@
+name: sbx-monitoring
+
+env:
+  ARM_CLIENT_ID: ${{ secrets.AZURE_S_EITAAS_POLICY_SP_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_S_EITAAS_POLICY_SP_CLIENT_SECRET }}
+  ARM_ENVIRONMENT: "usgovernment"
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_S_EITAAS_CAS_SP_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_S_EITAAS_CAS_SP_TENANT_ID }}
+  AZURE_E_POLICY_SP_CREDS: ${{ secrets.AZURE_S_EITAAS_POLICY_SP }}
+
+  TF_VAR_admin_subscription_id: ${{ secrets.AZURE_EITAAS_ADMIN_SUBSCRIPTION_ID}}
+  TF_VAR_data_collection_rules: '{
+    "S-Windows-Operational": {
+      os_type:      "Windows",
+      log_type:     "Operational",
+      data_flows: [
+        {
+          destinations:    ["svaeitaascdecore"],
+          destinations_rg: ["S-VA-EITAAS-COR-CDE"],
+          streams:         ["Microsoft-Event"]
+        }
+      ]
+    },
+    "S-Windows-Security": {
+      os_type:      "Windows",
+      log_type:     "Security",
+      data_flows: [
+        {
+          destinations:    ["azuresentinelgov"],
+          destinations_rg: ["aad-diagnostics"],
+          streams:         ["Microsoft-Event"]
+        }
+      ]
+    },
+    "S-Linux-Operational": {
+      os_type:             "Linux",
+      log_type:            "Operational",
+      data_sources_syslog: {
+        "auth":     "Notice",
+        "authpriv": "Notice",
+        "cron":     "Error",
+        "daemon":   "Error",
+        "kern":     "Error",
+        "news":     "Error",
+        "syslog":   "Notice",
+        "user":     "Error",
+        "uucp":     "Error"
+      },
+      data_flows:   [
+        {
+          destinations:    ["svaeitaascdecore"],
+          destinations_rg: ["S-VA-EITAAS-COR-CDE"],
+          streams:         ["Microsoft-Syslog"]
+        }
+      ]
+    },
+    "S-Linux-Security": {
+      os_type:             "Linux",
+      log_type:            "Security",
+      data_sources_syslog: {
+        "auth":     "Error",
+        "authpriv": "Error",
+        "cron":     "Error",
+        "daemon":   "Error",
+        "kern":     "Error",
+        "mark":     "Error",
+        "syslog":   "Error"
+      },
+      data_flows: [
+        {
+          destinations:    ["azuresentinelgov"],
+          destinations_rg: ["aad-diagnostics"],
+          streams:         ["Microsoft-Syslog"]
+        }
+      ]
+    }
+  }'
+  TF_VAR_dcr_info: '{
+    windows_security_dcr_name:    "S-Windows-Security",
+    linux_security_dcr_name:      "S-Linux-Security",
+    windows_operational_dcr_name: "S-Windows-Operational",
+    linux_operational_dcr_name:   "S-Linux-Operational",
+    vminsights_dcr_name:          "S-VMInsights-Perf"
+  }'
+  TF_VAR_vminsights_dcr_law: '{
+    name:     "svaeitaascdecore",
+    rg_name:  "S-VA-EITAAS-COR-CDE"
+  }'
+  TF_VAR_diagnostics_setting_name: eitaas-monitoring-policy
+  TF_VAR_policy_identity_name: S-EITaaS-Monitoring
+  TF_VAR_policy_identity_rg: S-VA-EITAAS-POLICY
+  TF_VAR_flow_logs_retention_policy_days: 14
+  TF_VAR_flow_logs_traffic_analytics_interval_min: 10
+  TF_VAR_location: usgovvirginia
+  TF_VAR_log_analytics_name: svaeitaascdecore
+  TF_VAR_log_analytics_rg_name: S-VA-EITAAS-COR-CDE
+  TF_VAR_managed_identity_roles: '[
+    "Managed Identity Contributor",
+    "Managed Identity Operator",
+    "S-EITAAS-CAS - Access Administrator"
+  ]'
+  TF_VAR_policy_scope: EITaaS_Sandbox
+  TF_VAR_storage_account_name: svaeitaascdecoremon
+  TF_VAR_storage_account_rg_name: S-VA-EITAAS-COR-CDE
+  TF_VAR_storage_account_tx_rg_name: S-TX-EITAAS-CAS-AUTOMATION
+  TF_VAR_storage_account_tx_name: stxeitaascdecoremon
+  TF_VAR_policy_exclude_rg_ids_list: '[
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_CAS_SP_SUBSCRIPTION_ID }}/resourceGroups/databricks-rg-adbeitaasdatateam-hucub2znvlff4",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_CAS_SP_SUBSCRIPTION_ID }}/resourceGroups/databricks-rg-S-VA-EITAAS-COR-CDE",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_CAS_SP_SUBSCRIPTION_ID }}/resourceGroups/synapseworkspace-managedrg-e02cf73b-ac94-43a7-82a0-e4d30bf1f62d",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_CAS_SP_SUBSCRIPTION_ID }}/resourceGroups/synapseworkspace-managedrg-f3572911-87e8-4da2-bc07-0c95de65f9fe",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_EUS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-TX-EITAAS-EUS-PACKERBUILDS",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_CAS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-VA-EITAAS-CAS-PACKERBUILDS",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_CAS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-TX-EITAAS-CAS-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_EUS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-TX-EITAAS-EUS-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_EUS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-VA-EITAAS-EUS-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-TX-RG-CLR",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-TX-RG-DDI",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-TX-RG-DNS",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-TX-RG-ROC",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-VA-RG-CLR",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-VA-RG-ROC",
+    "/subscriptions/${{ secrets.AZURE_S_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/S-VA-EITAAS-INFRA-PACKERBUILDS"
+  ]'
+  imagegallery_rgs: '{
+      "S-EITAAS-CAS": [
+          "S-VA-EITAAS-CAS-IMAGEGALLERY",
+          "S-TX-EITAAS-CAS-IMAGEGALLERY"
+      ],
+      "S-EITAAS-EUS": [
+          "S-VA-EITAAS-EUS-IMAGEGALLERY",
+          "S-TX-EITAAS-EUS-IMAGEGALLERY"
+      ],
+      "S-EITAAS-INFRA": [
+          "S-VA-RG-BaseImages",
+          "S-TX-RG-BaseImages"
+      ]
+  }'
+  compute_imagegallery_rgs: '{
+    "S-EITAAS-INFRA": [
+        "S-TX-RG-IMG",
+        "S-VA-EITAAS-INFRA-SHAREDIMAGEGALLERY"
+    ]
+}'
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+    - '.github/workflows/sbx-monitoring.yml'
+    - 'monitoring/**'
+    - '!README.md'
+    - '!LICENSE'
+    - '!.github/ISSUE_TEMPLATE/**'
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3.1.0
+
+    - name: Connect to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ env.AZURE_E_POLICY_SP_CREDS }}
+        environment: 'AzureUSGovernment'
+        enable-AzPSSession: true
+
+    - name: Get all custom image ids from image gallery
+      id: get_image_ids
+      shell: pwsh
+      run: |
+        Install-Module -Name Az.Accounts, Az.Compute, Az.Resources -Scope CurrentUser -Force
+
+        ## IMAGE VERSIONS FROM GALLERY RESOURCE GROUP ##
+        $imagegallery_rgs = $env:imagegallery_rgs | ConvertFrom-Json -AsHashTable
+
+        $imageList = @()
+        foreach ($sub in $imagegallery_rgs.GetEnumerator())
+        {
+            Write-Information -Message "INFO: Connecting to Subscription $($sub.Key)" -InformationAction Continue
+            $null = Select-AzSubscription -SubscriptionName $sub.Key
+            foreach ($rg in $sub.Value)
+            {
+                Write-Information -Message "INFO: Retrieving Images from $rg" -InformationAction Continue
+                $imageList += Get-AzImage -ResourceGroupName $rg
+            }
+        }
+
+        $imageListLinux = @(($imageList.Where({ $_.StorageProfile.OsDisk.OsType -eq 'Linux' })).Id)
+        $imageListWindows = @(($imageList.Where({ $_.StorageProfile.OsDisk.OsType -eq 'Windows' })).Id)
+
+        ## IMAGE VERSIONS FROM COMPUTE GALLERIES ##
+        $compute_imagegallery_rgs = $env:compute_imagegallery_rgs | ConvertFrom-Json -AsHashTable
+        foreach ($sub in $compute_imagegallery_rgs.GetEnumerator())
+        {
+            Write-Information -Message "INFO: Connecting to Compute Gallery Subscription $($sub.Key)" -InformationAction Continue
+            $null = Select-AzSubscription -SubscriptionName $sub.Key
+            foreach ($rg in $sub.Value)
+            {
+              Write-Information -Message "INFO: Retrieving Compute Gallery Resource Group $($rg)" -InformationAction Continue
+              $computeGallery = Get-AzGallery -ResourceGroupName $rg
+              Write-Information -Message "INFO: Retrieving image definitions from Compute Gallery in $($rg)" -InformationAction Continue
+              $imageDefinitions = Get-AzGalleryImageDefinition -ResourceGroupName $computegallery.ResourceGroupName -GalleryName $computegallery.Name
+              $windowsDefinitions = $imageDefinitions.Where({ $_.OsType -eq 'Windows' })
+              $linuxDefinitions = $imageDefinitions.Where({ $_.OsType -eq 'Linux' })
+              Write-Information -Message "INFO: Retrieving Windows image versions" -InformationAction Continue
+              foreach ($winDefinition in $windowsDefinitions)
+              {
+                  $imageListWindows += (Get-AzGalleryImageVersion -ResourceGroupName $computegallery.ResourceGroupName -GalleryName $computegallery.Name -GalleryImageDefinitionName $winDefinition.Name).Id
+              }
+              Write-Information -Message "INFO: Retrieving Linux image versions" -InformationAction Continue
+              foreach ($linDefinition in $LinuxDefinitions)
+              {
+                  $imageListLinux += (Get-AzGalleryImageVersion -ResourceGroupName $computegallery.ResourceGroupName -GalleryName $computegallery.Name -GalleryImageDefinitionName $linDefinition.Name).Id
+              }
+            }
+        }
+
+        Write-Information -Message "INFO: Output Windows image Ids:" -InformationAction Continue
+        $imageListWindows
+
+        Write-Information -Message "INFO: Output Linux image Ids:" -InformationAction Continue
+        $imageListLinux
+
+        Write-Information -Message "INFO: Converting Windows image Ids to string list" -InformationAction Continue
+        $strImageListWindows = $imageListWindows -Join ','
+
+        Write-Information -Message "INFO: Converting Linux image Ids to string list" -InformationAction Continue
+        $strImageListLinux = $imageListLinux -Join ','
+
+        echo "WINDOWS_IMAGE_IDS=$strImageListWindows" >> $env:GITHUB_OUTPUT
+        echo "LINUX_IMAGE_IDS=$strImageListLinux" >> $env:GITHUB_OUTPUT
+
+    - name: Terraform Monitoring
+      shell: pwsh
+      run: |
+        Write-Host 'Converting image list to JSON object' #NOTE: can only pass strings between GH jobs/steps so have to do the JSON conversion here
+        $env:TF_VAR_custom_windows_image_ids_list = ConvertTo-Json -InputObject $('${{ steps.get_image_ids.outputs.WINDOWS_IMAGE_IDS }}' -split ',')
+        $env:TF_VAR_custom_linux_image_ids_list = ConvertTo-Json -InputObject $('${{ steps.get_image_ids.outputs.LINUX_IMAGE_IDS }}' -split ',')
+
+        cd monitoring
+        terraform init -input=false -backend-config="${{ github.workspace }}/.tfbackend/${{ github.workflow }}"
+        # Avoid using 'terraform destroy' unless it is absolutely necessary since this will remove managed identity permission and it can only be reassigned through IdaM team.
+        terraform plan -input=false -var-file="monitoring.tfvars" -out=tfplan
+        terraform apply -auto-approve tfplan
+
+    - name: Initiate Scan
+      shell: pwsh
+      run: |
+        $null = Install-Module -Name Az.PolicyInsights -Scope CurrentUser -Force
+        $job = Start-AzPolicyComplianceScan -AsJob
+        $job | Wait-Job
+
+    - name: Policy Remediation
+      shell: pwsh
+      run: |
+        Write-Host 'Remediating required policies'
+        $policyFilter = "PolicySetDefinitionName eq 'EITaaS_Monitoring' and ComplianceState eq 'NonCompliant' and PolicyDefinitionAction eq 'deployIfNotExists'"
+        $nonCompliantPolicies = Get-AzPolicyState -ManagementGroupName  $env:TF_VAR_policy_scope -Filter $policyFilter
+        $uniqueNonCompliantPolicies = $nonCompliantPolicies | Sort-Object -Unique -Property 'PolicyDefinitionName'
+
+        $remediations = @()
+        foreach ($policy in $uniqueNonCompliantPolicies)
+        {
+          Write-Host "Creating remediation for $($policy.PolicyDefinitionName)"
+          $params = @{
+            ManagementGroupName         = $env:TF_VAR_policy_scope
+            Name                        = "remediation.$($policy.PolicyDefinitionName)"
+            PolicyAssignmentId          = $policy.PolicyAssignmentId
+            PolicyDefinitionReferenceId = $policy.PolicyDefinitionReferenceId
+          }
+          $remediations += Start-AzPolicyRemediation @params -ErrorAction SilentlyContinue
+        }
+
+        Write-Host "$remediations"

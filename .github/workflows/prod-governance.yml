@@ -1,0 +1,202 @@
+name: prod-governance
+
+env:
+  ARM_CLIENT_ID: ${{ secrets.AZURE_P_EITAAS_POLICY_SP_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_P_EITAAS_POLICY_SP_CLIENT_SECRET }}
+  ARM_ENVIRONMENT: "usgovernment"
+  ARM_PARTNER_ID : ${{ secrets.AZURE_CUA_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_P_EITAAS_CAS_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_EITAAS_TENANT_ID }}
+  TF_VAR_policy_scope: EITaaS_Production
+  TF_VAR_set_audit_or_disabled: Disabled
+  TF_VAR_pip_exclude_rg_id_list: '[
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/P-TX-EITAAS-EUS-PACKERBUILDS",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/P-VA-EITAAS-EUS-PACKERBUILDS",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/P-TX-EITAAS-CAS-PACKERBUILDS",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/P-VA-EITAAS-CAS-PACKERBUILDS",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/P-VA-EITAAS-AVD-PACKERBUILDS",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/P-TX-RG-TEST",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/Army-TeamsConn-usgovtexas-RG",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_CVI_SUBSCRIPTION_ID }}/resourceGroups/P-TX-EITAAS-CVI",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/P-TX-RG-OOBM",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/P-VA-RG-OOBM"
+  ]'
+  TF_VAR_blob_exclude_rg_id_list: '[
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_EUS_SUBSCRIPTION_ID }}/resourceGroups/P-TX-EITAAS-EUS-PUBLICSA"
+  ]'
+  TF_VAR_policy_exclude_rg_id_list: '[
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_AVD_SUBSCRIPTION_ID }}/resourceGroups/P-VA-EITAAS-AVD-PACKERBUILDS",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/databricks-rg-P-VA-EITAAS-COR-CDE",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/synapseworkspace-managedrg-274af06f-a897-42b6-a70a-c7140d4d2029",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/P-VA-EITAAS-CAS-PACKERBUILDS",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/P-TX-EITAAS-CAS-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/P-VA-EITAAS-CAS-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_CVI_SUBSCRIPTION_ID }}/resourceGroups/P-TX-EITAAS-CVI-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_EUS_SUBSCRIPTION_ID }}/resourceGroups/P-TX-EITAAS-EUS-PACKERBUILDS",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_EUS_SUBSCRIPTION_ID }}/resourceGroups/P-TX-EITAAS-EUS-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_EUS_SUBSCRIPTION_ID }}/resourceGroups/P-VA-EITAAS-EUS-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/P-VA-EITAAS-INFRA-PACKERBUILDS",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/P-TX-EITAAS-NET-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/P-VA-EITAAS-NET-PACKERCOPY"
+  ]'
+  TF_VAR_policy_exclude_vm_backup_rg_id_list: '[
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_AVD_SUBSCRIPTION_ID }}/resourceGroups/P-VA-EITAAS-AVD-PERSONAL",
+    "/subscriptions/${{ secrets.AZURE_P_EITAAS_AVD_SUBSCRIPTION_ID }}/resourceGroups/P-VA-EITAAS-AVD-POOLED"
+  ]'
+  TF_VAR_subnet_exclude_list: '[
+    "AzureBastionSubnet",
+    "AzureFirewallSubnet",
+    "AzureRouteServerSubnet",
+    "GatewaySubnet"
+  ]'
+  TF_VAR_subnet_exclude_rg_list: '[
+    "P-TX-RG-OOBM",
+    "P-VA-RG-OOBM"
+  ]'
+
+on:
+  pull_request:
+    branches: [ release ]
+    paths:
+    - '.github/workflows/prod-governance.yml'
+    - 'governance/**'
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    environment: P-EITAAS-CAS
+
+    steps:
+    - uses: actions/checkout@v3.1.0
+
+    - name: Terraform Governance
+      run: |
+        cd governance
+        terraform init -input=false -backend-config=${{ github.workspace }}/.tfbackend/${{ github.workflow }}
+        # terraform destroy -auto-approve -var-file="governance.tfvars" -target azurerm_policy_set_definition.policy_set
+        terraform plan -input=false -var-file="governance.tfvars" -out=tfplan
+        # terraform apply -auto-approve tfplan
+
+  # Remediation:
+  #   needs: [terraform]
+  #   runs-on: ubuntu-latest
+  #   environment: P-EITAAS-CAS
+
+  #   steps:
+  #   - uses: actions/checkout@v3.1.0
+
+  #   - name: Connect to Azure
+  #     uses: azure/login@v1
+  #     with:
+  #       creds: ${{ secrets.AZURE_P_EITAAS_POLICY_SP }}
+  #       environment: 'AzureUSGovernment'
+  #       enable-AzPSSession: true
+
+  #   - name: Remediation
+  #     shell: pwsh
+  #     run: |
+  #       $null = Install-Module -Name 'Az.PolicyInsights' -Scope CurrentUser -Force
+  #       write-host 'Sleeping for 5 minutes while newly deployed resources settle.'
+  #       sleep 300
+
+  #       write-host 'Run policy scan'
+  #       Start-AzPolicyComplianceScan
+
+  #       write-host 'Remediating required policies'
+  #       $policyFilter = "PolicySetDefinitionName eq 'EITaaS_Governance' and ComplianceState eq 'NonCompliant' and PolicyDefinitionAction eq 'deployIfNotExists'"
+  #       $nonCompliantPolicies = Get-AzPolicyState -ManagementGroupName $env:TF_VAR_policy_scope -Filter $policyFilter
+  #       $uniqueNonCompliantPolicies = $nonCompliantPolicies | Sort-Object -Unique -Property 'PolicyDefinitionName'
+  #       $remediations = @()
+  #       foreach ($policy in $uniqueNonCompliantPolicies)
+  #       {
+  #         write-host "Creating remediation for $($policy.PolicyDefinitionName)"
+  #         $params = @{
+  #           Name                        = "testrem.$($policy.PolicyDefinitionName)"
+  #           PolicyAssignmentId          = $policy.PolicyAssignmentId
+  #           PolicyDefinitionReferenceId = $policy.PolicyDefinitionReferenceId
+  #         }
+  #         $remediations += Start-AzPolicyRemediation @params
+  #       }
+
+  #       write-host 'Waiting for remediations to complete'
+  #       $failedRemediations = @()
+  #       for ($i = 1 ; $i -lt 11; $i++)
+  #       {
+  #         $remediationsInProgress = $false
+  #         foreach ($remediation in $remediations)
+  #         {
+  #           write-host "'$($remediation.Name)' task '$($remediation.ProvisioningState)'"
+  #           if ($remediation.ProvisioningState -eq 'Failed')
+  #           {
+  #             $failedRemediations += $remediation
+  #             write-host "remediation $(remediation.Name) failed - restarting)"
+  #             $params = @{
+  #               Name                        = $remediation.Name
+  #               PolicyAssignmentId          = $remediation.PolicyAssignmentId
+  #               PolicyDefinitionReferenceId = $remediation.PolicyDefinitionReferenceId
+  #             }
+  #             Start-AzPolicyRemediation @params
+  #           }
+  #           elseif ($remediation.ProvisioningState -ne 'Succeeded')
+  #           {
+  #             $remediationsInProgress = $true
+  #           }
+  #         }
+  #         if (! $remediationsInProgress)
+  #         {
+  #           break
+  #         }
+  #         write-host "Waiting 60 seconds for remediations to finish: $i of 10"
+  #         sleep 60
+  #         $remediations = Get-AzPolicyRemediation -ManagementGroupName $env:TF_VAR_policy_scope
+  #       }
+
+  #       if ($failedRemediations)
+  #       {
+  #         write-host 'Attempting failed remediations a second time'
+  #         $remediations = @()
+  #         foreach ($remediation in $failedRemediations)
+  #         {
+  #           $params = @{
+  #             Name                        = $remediation.Name
+  #             PolicyAssignmentId          = $remediation.PolicyAssignmentId
+  #             PolicyDefinitionReferenceId = $remediation.PolicyDefinitionReferenceId
+  #           }
+  #           $remediations += Start-AzPolicyRemediation @params
+  #         }
+
+  #         write-host 'Waiting for failed remediations to complete'
+  #         $remediationError = $false
+  #         for ($i = 1 ; $i -lt 11; $i++)
+  #         {
+  #           $remediationsInProgress = $false
+  #           foreach ($remediation in $remediations)
+  #           {
+  #             write-host "'$($remediation.Name)' task '$($remediation.ProvisioningState)'"
+  #             if ($remediation.ProvisioningState -eq 'Failed')
+  #             {
+  #               write-host "$($remediation.Name) failed."
+  #               $remediationError = $true
+  #             }
+  #             elseif ($remediation.ProvisioningState -ne 'Succeeded')
+  #             {
+  #               $remediationsInProgress = $true
+  #             }
+  #           }
+  #           if (! $remediationsInProgress)
+  #           {
+  #             break
+  #           }
+  #           write-host "Waiting 60 seconds for remediations to finish: $i of 10"
+  #           sleep 60
+  #           $remediations = Get-AzPolicyRemediation -ManagementGroupName $env:TF_VAR_policy_scope
+  #         }
+
+  #         if ($remediationError)
+  #         {
+  #           throw "Remediations have failed."
+  #         }
+  #       }
+
+  #       write-host 'Running final policy scan after remediations complete'
+  #       Start-AzPolicyComplianceScan

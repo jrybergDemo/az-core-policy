@@ -1,0 +1,6 @@
+key                  = "prod-monitoring.tfstate"
+environment          = "usgovernment"
+resource_group_name  = "P-VA-EITAAS-COR-TFSTATE"
+storage_account_name = "pvaeitaastfstatedata"
+container_name       = "p-va-eitaas-cor-tfstate"
+use_msi              = true

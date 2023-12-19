@@ -1,21 +1,67 @@
 name: dev-governance
 
 env:
-  ARM_CLIENT_ID: ${{ secrets.AZURE_D_CONTOSO_POLICY_CLIENT_ID }}
-  ARM_CLIENT_SECRET: ${{ secrets.AZURE_D_CONTOSO_POLICY_CLIENT_SECRET }}
-  ARM_ENVIRONMENT: "public"
-  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_D_CONTOSO_CORE_SUBSCRIPTION_ID }}
-  ARM_TENANT_ID: ${{ secrets.AZURE_CONTOSO_TENANT_ID }}
-  AZURE_E_POLICY_SP_CREDS: ${{ secrets.AZURE_D_CONTOSO_POLICY_SP }}
-  TF_VAR_policy_scope: DEVELOPMENT
+  ARM_CLIENT_ID: ${{ secrets.AZURE_D_EITAAS_POLICY_SP_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_D_EITAAS_POLICY_SP_CLIENT_SECRET }}
+  ARM_ENVIRONMENT: "usgovernment"
+  ARM_PARTNER_ID: ${{ secrets.AZURE_CUA_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_D_EITAAS_CAS_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_EITAAS_TENANT_ID }}
+  AZURE_E_POLICY_SP_CREDS: ${{ secrets.AZURE_D_EITAAS_POLICY_SP }}
+  AUTO_PR_GH_PAT: ${{ secrets.AUTO_PR_GH_PAT }}
+  AZURE_GOV_ENV:  AzureUSGovernment
+  AZURE_POLICY_SET: "EITaaS_Governance"
+  AZURE_POLICY_SCOPE: "EITaaS_Development"
+  AZURE_POLICY_DEF_STORAGE: "Deny Anonymous Access - Storage Account"
+  AZURE_POLICY_DEF_PIP: "Deny Public IP - NIC Association with Resource Group exception"
+  FAILED_WORKFLOW_ISSUE_CREATION_REPO_NAME: ArmyEITaaS/Issues
+  FAILED_WORKFLOW_ISSUE_CREATION_WORKFLOW_NAME: issue-creation-workflow-failed
+
+  TF_VAR_policy_scope: EITaaS_Development
   TF_VAR_set_audit_or_disabled: Disabled
-  TF_VAR_pip_exclude_rg_list: '[
-    "CONTOSO_TESTING"
+  #Adding resource id to the list instead of just name of the resource group down below
+  TF_VAR_pip_exclude_rg_id_list: '[
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/databricks-rg-D-VA-EITAAS-COR-CDE",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_CVI_SUBSCRIPTION_ID }}/resourceGroups/D-TX-EITAAS-CVI",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/D-TX-RG-OOBM",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/D-VA-RG-OOBM"
+  ]'
+  TF_VAR_blob_exclude_rg_id_list: '[
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_EUS_SP_SUBSCRIPTION_ID }}/resourceGroups/D-TX-EITAAS-EUS-PUBLICSA"
+  ]'
+  TF_VAR_policy_exclude_rg_id_list: '[
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/databricks-rg-D-VA-EITAAS-COR-CDE",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/synapseworkspace-managedrg-2f41411a-cff5-474c-bc18-98a6cd31ae4b",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/synapseworkspace-managedrg-abe64156-c6a6-4a2e-94bc-34443afce8c5",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/synapseworkspace-managedrg-f6756886-c38a-4a6d-b148-b066f42e81f1",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_EUS_SP_SUBSCRIPTION_ID }}/resourceGroups/D-TX-EITAAS-EUS-PACKERBUILDS",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/D-VA-EITAAS-CAS-PACKERBUILDS",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_EUS_SP_SUBSCRIPTION_ID }}/resourceGroups/D-TX-EITAAS-EUS-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_EUS_SP_SUBSCRIPTION_ID }}/resourceGroups/D-VA-EITAAS-EUS-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/D-TX-EITAAS-CAS-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/D-TX-EITAAS-NET-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/D-VA-EITAAS-NET-PACKERCOPY",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_NAAS_SP_SUBSCRIPTION_ID }}/resourceGroups/D-VA-EITAAS-INFRA-PACKERBUILDS",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_CAS_SUBSCRIPTION_ID }}/resourceGroups/EITAAS_TESTING"
+  ]'
+  TF_VAR_policy_exclude_vm_backup_rg_id_list: '[
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_AVD_SUBSCRIPTION_ID }}/resourceGroups/D-VA-EITAAS-AVD-PERSONAL",
+    "/subscriptions/${{ secrets.AZURE_D_EITAAS_AVD_SUBSCRIPTION_ID }}/resourceGroups/D-VA-EITAAS-AVD-POOLED"
+  ]'
+  TF_VAR_subnet_exclude_list: '[
+    "AzureBastionSubnet",
+    "AzureFirewallSubnet",
+    "AzureRouteServerSubnet",
+    "GatewaySubnet"
+  ]'
+  TF_VAR_subnet_exclude_rg_list: '[
+    "D-TX-RG-OOBM",
+    "D-VA-RG-OOBM"
   ]'
 
 on:
-  pull_request:
-    branches: [ main ]
+  push:
+    branches: [main]
     paths:
     - '.github/workflows/dev-governance.yml'
     - 'governance/**'
@@ -25,31 +71,53 @@ on:
 jobs:
   terraform:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2.3.4
+    - uses: actions/checkout@v3
 
     - name: Terraform Governance
-      continue-on-error: false
       shell: pwsh
       run: |
         cd governance
         terraform init -input=false -backend-config="${{ github.workspace }}/.tfbackend/${{ github.workflow }}"
         #terraform destroy -auto-approve -var-file="governance.tfvars"
         terraform plan -input=false -var-file="governance.tfvars" -out=tfplan
-        
-        Get-Item -Path "${{ github.workspace }}\governance\tfplan"
-
         terraform apply -auto-approve tfplan
+
+    - name: Output for testing
+      shell: pwsh
+      run: |
+        #Create output file for tests step needs to be separate as 'terraform output' and 'terraform show' will cause WF to pass even with failed 'terraform apply'
+        cd governance
+        terraform output -json | Set-Content -Path ./output.json -Force
 
     - name: Connect to Azure
       uses: azure/login@v1
       with:
         creds: ${{ env.AZURE_E_POLICY_SP_CREDS }}
-        environment: 'AzureCloud'
+        environment: 'AzureUSGovernment'
 
     - name: Start Tests
-      continue-on-error: false
       shell: pwsh
       run: |
         az policy state trigger-scan
+        $null = Install-Module -Name 'Az.Resources' -Scope CurrentUser -Force
+        Import-Module Pester, Az.Resources
+
+        $paramData = @{ PolicyScope = "${{ env.TF_VAR_policy_scope }}" }
+        $container = New-PesterContainer -Path "${{ GITHUB.WORKSPACE }}\governance" -Data $paramData
+        Invoke-Pester -Container $container -Output Detailed
+
+  create-issue-on-failure:
+    if: ${{ github.event_name == 'push' && github.ref_name == 'main' && failure() }}
+    needs: [terraform]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Create GitHub Issue for Failed Workflow
+      uses: ArmyEITaaS/workflow-dispatch@v1
+      with:
+        token: ${{ env.AUTO_PR_GH_PAT }}
+        repo: ${{ env.FAILED_WORKFLOW_ISSUE_CREATION_REPO_NAME }}
+        ref: main
+        workflow: ${{ env.FAILED_WORKFLOW_ISSUE_CREATION_WORKFLOW_NAME }}
+        inputs: '{"FAILED_WORKFLOW_NAME":"${{ github.workflow }}","FAILED_WORKFLOW_REPO_NAME":"${{ github.repository }}","FAILED_WORKFLOW_RUN_ID":"${{ github.run_id }}"}'

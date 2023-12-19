@@ -1,0 +1,6 @@
+key                  = "ci-cas-foundations-enterprise-moni.tfstate"
+environment          = "usgovernment"
+resource_group_name  = "S-VA-EITAAS-COR-TFSTATE"
+storage_account_name = "svaeitaastfstatedata"
+container_name       = "s-va-eitaas-cor-tfstate"
+use_msi              = true

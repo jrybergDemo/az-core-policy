@@ -1,6 +1,0 @@
-key                  = "test-cas-foundations-enterprise-moni.tfstate"
-environment          = "public"
-resource_group_name  = "S-VA-Contoso-COR-TFSTATE"
-storage_account_name = "svaContosotfstatedata"
-container_name       = "s-va-Contoso-cor-tfstate"
-use_msi              = true

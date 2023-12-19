@@ -1,6 +1,0 @@
-key                  = "test-governance.tfstate"
-environment          = "public"
-resource_group_name  = "T-WUS2-TFSTATE"
-storage_account_name = "twus2contosotfstate"
-container_name       = "t-wus2-contoso-tfstate"
-use_msi              = true
